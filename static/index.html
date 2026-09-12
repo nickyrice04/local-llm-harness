@@ -1,0 +1,79 @@
+<!doctype html>
+<!-- Seymour's one page. The layout shell lives here; every view renders
+     into #view via TypeScript (frontend/src → static/app.js). The theme
+     system (theme.ts) drives [data-theme] on <html> and the layout class
+     (landscape/portrait) on <body>; styles.css reads both. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seymour</title>
+  <!-- ?v=N busts the browser's cache when the bundle changes (bump on
+       every release that touches app.js or styles.css). -->
+  <link rel="stylesheet" href="/styles.css?v=42">
+  <!-- The favicon is Seymour's eye, drawn inline as SVG (no binary asset). -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23faf5e9'/%3E%3Cellipse cx='50' cy='50' rx='38' ry='26' fill='none' stroke='%23262425' stroke-width='9'/%3E%3Ccircle cx='50' cy='50' r='14' fill='none' stroke='%23262425' stroke-width='9'/%3E%3C/svg%3E">
+</head>
+<body>
+  <!-- ═══ Left rail (landscape) / top bar (portrait): identity + nav ═══ -->
+  <nav id="sidebar">
+    <div id="brand">
+      <!-- The "see more" eye — the PIXEL version (icons.ts), injected by
+           main.ts so the brand mark matches the rest of the icon set. -->
+      <span id="brand-eye"></span>
+      <span>SEYMOUR</span>
+    </div>
+
+    <!-- Navigation buttons are built by main.ts (pixel icon + label). -->
+    <div id="nav"></div>
+
+    <!-- The chat sessions list (populated by the chat view; hidden on
+         other views by main.ts). -->
+    <div id="sessions"></div>
+  </nav>
+
+  <!-- ═══ Center: the active view (all status lives in Seymour's area) ═══ -->
+  <main id="main">
+    <section id="view"></section>
+    <!-- The Code workspace: a PANE beside the view, not a view — opening
+         it must not destroy the chat (and cancel its run). Toggled by the
+         nav's Code button; built by code.ts. -->
+    <section id="code-pane" hidden></section>
+  </main>
+
+  <!-- ═══ Seymour's reserved area: his column of the app ═══
+       Always reserved for the avatar and the machine's vitals (right
+       side by default; left or off in Settings). The frame resizes
+       vertically inside it; the inner edge drags to change its width.
+       Everything persists via theme.ts prefs. -->
+  <aside id="companion">
+    <!-- The width-drag strip on the panel's inner edge. -->
+    <div id="companion-drag" title="Drag to resize Seymour's area"></div>
+    <!-- The eye is injected as a pixel icon by main.ts. -->
+    <div id="aw-titlebar"><span id="aw-eye"></span><span>SEYMOUR</span></div>
+    <div id="avatar-frame">
+      <!-- The avatar canvas: procedural pixel scenes, driven ONLY by real
+           state events. avatar.ts sets the logical resolution from the
+           frame's live aspect; CSS scales it with pixelated rendering. -->
+      <canvas id="avatar" width="256" height="168"></canvas>
+    </div>
+    <!-- What Seymour is doing, in words (state label)… -->
+    <div id="avatar-state" class="muted"></div>
+    <!-- …and his little voice (encouraging quips on real transitions). -->
+    <div id="avatar-quip"></div>
+    <!-- The metrics field: everything about the machine's health lives
+         HERE, not in a top bar — model, mode, memory, then the SLOTS
+         queue (every engine slot: occupant, phase, tok/s) with waiting
+         work under a dashed line. Rendered by avatar/window.ts from
+         /api/status. Real numbers only. -->
+    <div id="aw-metrics"></div>
+    <div id="aw-health-title">SLOTS</div>
+    <div id="aw-health"></div>
+  </aside>
+
+  <!-- The first-launch onboarding tour mounts itself here when needed. -->
+  <div id="overlay-root"></div>
+
+  <script src="/app.js?v=42"></script>
+</body>
+</html>

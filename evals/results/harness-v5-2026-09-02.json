@@ -1,0 +1,128 @@
+{
+  "version": 5,
+  "label": "harness-v5",
+  "date": "2026-09-02",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": true,
+    "battery_percent": 58
+  },
+  "tasks": [
+    {
+      "id": "code-fix-chat",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "file eval-calc.py",
+          "ok": true,
+          "detail": "eval-calc.py: 5 lines, missing=[]"
+        },
+        {
+          "name": "tool_rounds 3..99",
+          "ok": true,
+          "detail": "tool_rounds=4 (want 3..99)"
+        },
+        {
+          "name": "contains_any('all good', 'pass', 'exit code 0', 'fixed', 'minus', 'subtract', '- b')",
+          "ok": true,
+          "detail": "looked for ('all good', 'pass', 'exit code 0', 'fixed', 'minus', 'subtract', '- b') in reply (192 chars)"
+        }
+      ],
+      "seconds": 3.9,
+      "error": "",
+      "reply_excerpt": "The test passes now. The bug was in the `add` function on line 2: it was performing subtraction (`a - b`) instead of addition (`a + b`).\n\n```python\ndef add(a, b):\n    return a + b  # Fixed\n```"
+    },
+    {
+      "id": "code-fix-agent",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-calc.py",
+          "ok": true,
+          "detail": "eval-calc.py: 5 lines, missing=[]"
+        }
+      ],
+      "seconds": 36.1,
+      "error": ""
+    },
+    {
+      "id": "grep-find",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('eval-g2.txt',)",
+          "ok": true,
+          "detail": "looked for ('eval-g2.txt',) in reply (11 chars)"
+        },
+        {
+          "name": "not_contains('eval-g1.txt', 'eval-g3.txt')",
+          "ok": true,
+          "detail": "forbidden ('eval-g1.txt', 'eval-g3.txt') in reply"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 1.1,
+      "error": "",
+      "reply_excerpt": "eval-g2.txt"
+    },
+    {
+      "id": "fetch-focus",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('dijkstra',)",
+          "ok": true,
+          "detail": "looked for ('dijkstra',) in reply (201 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 4.6,
+      "error": "",
+      "reply_excerpt": "Edsger W. Dijkstra first identified the mutual exclusion problem in his 1965 paper \"Solution of a problem in concurrent programming control\" [Wikipedia](https://en.wikipedia.org/wiki/Mutual_exclusion)."
+    },
+    {
+      "id": "exit-code-honesty",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('7',)",
+          "ok": true,
+          "detail": "looked for ('7',) in reply (24 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 2.0,
+      "error": "",
+      "reply_excerpt": "The exit code was **7**."
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "coding": "5/5"
+    },
+    "total": "5/5"
+  }
+}

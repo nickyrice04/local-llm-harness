@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            background: radial-gradient(ellipse at center, #0b0b1a 0%, #000000 100%);
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 30, 0.8);
+            padding: 15px 25px;
+            border-radius: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #357abd;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 150px;
+            height: 6px;
+            background: #444;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #4a90e2;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        label {
+            font-size: 14px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="solarCanvas"></canvas>
+    <div id="controls">
+        <button id="playPauseBtn">Pause</button>
+        <div class="slider-container">
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="1">
+        </div>
+    </div>
+    <script>
+    const canvas = document.getElementById('solarCanvas');
+    const ctx = canvas.getContext('2d');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const speedSlider = document.getElementById('speedSlider');
+
+    let width, height, centerX, centerY;
+    let isPaused = false;
+    let speedMultiplier = 1;
+    let time = 0;
+    let stars = [];
+
+    const planets = [
+        { name: 'Mercury', distance: 60, size: 4, speed: 0.04, color: '#A5A5A5' },
+        { name: 'Venus', distance: 90, size: 7, speed: 0.015, color: '#E3BB76' },
+        { name: 'Earth', distance: 130, size: 7.5, speed: 0.01, color: '#22A6F2' },
+        { name: 'Mars', distance: 170, size: 5, speed: 0.008, color: '#DD4C22' },
+        { name: 'Jupiter', distance: 240, size: 18, speed: 0.004, color: '#D6A566' },
+        { name: 'Saturn', distance: 320, size: 15, speed: 0.003, color: '#F4D03F', ring: true },
+        { name: 'Uranus', distance: 390, size: 10, speed: 0.002, color: '#7DE3F4' },
+        { name: 'Neptune', distance: 450, size: 10, speed: 0.001, color: '#3E54E8' }
+    ];
+
+    function init() {
+        resize();
+        generateStars();
+        window.addEventListener('resize', resize);
+        playPauseBtn.addEventListener('click', togglePause);
+        speedSlider.addEventListener('input', (e) => {
+            speedMultiplier = parseFloat(e.target.value);
+        });
+        requestAnimationFrame(animate);
+    }
+
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        centerX = width / 2;
+        centerY = height / 2;
+        generateStars();
+    }
+
+    function generateStars() {
+        stars = [];
+        const numStars = 500;
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 1.5,
+                opacity: Math.random()
+            });
+        }
+    }
+
+    function drawStars() {
+        ctx.fillStyle = '#fff';
+        stars.forEach(star => {
+            ctx.globalAlpha = star.opacity;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+    }
+
+    function drawSun() {
+        const gradient = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, 40);
+        gradient.addColorStop(0, '#FFF');
+        gradient.addColorStop(0.2, '#FFD700');
+        gradient.addColorStop(0.5, '#FF8C00');
+        gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawOrbit(distance) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, distance, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    function drawPlanet(planet) {
+        const angle = time * planet.speed;
+        const x = centerX + Math.cos(angle) * planet.distance;
+        const y = centerY + Math.sin(angle) * planet.distance;
+
+        // Draw orbit path
+        drawOrbit(planet.distance);
+
+        // Draw Saturn's ring
+        if (planet.ring) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, planet.size * 2.2, planet.size * 0.6, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(200, 180, 140, 0.6)';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Draw planet body
+        ctx.fillStyle = planet.color;
+        ctx.beginPath();
+        ctx.arc(x, y, planet.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(planet.name, x, y - planet.size - 8);
+    }
+
+    function animate() {
+        if (!isPaused) {
+            time += 0.5 * speedMultiplier;
+        }
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Background gradient
+        const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height));
+        bgGradient.addColorStop(0, '#0b0b1a');
+        bgGradient.addColorStop(1, '#000000');
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, width, height);
+
+        drawStars();
+        drawSun();
+
+        planets.forEach(drawPlanet);
+
+        requestAnimationFrame(animate);
+    }
+
+    // Initialize
+    init();
+</script>
+</body>
+</html>

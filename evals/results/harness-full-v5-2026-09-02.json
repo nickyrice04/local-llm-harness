@@ -1,0 +1,567 @@
+{
+  "version": 5,
+  "label": "harness-full-v5",
+  "date": "2026-09-02",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": true,
+    "battery_percent": 55
+  },
+  "tasks": [
+    {
+      "id": "web-fact",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('spain',)",
+          "ok": true,
+          "detail": "looked for ('spain',) in reply (431 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 3.8,
+      "error": "",
+      "reply_excerpt": "**Spain** won the 2026 FIFA World Cup.\n\nThey defeated Argentina 1\u20130 after extra time in the final, with Ferran Torres scoring the winning goal. The match took place on July 19, 2026, at the New York\u2013New Jersey Stadium.\n\n*   Source: [FIFA Official](https://inside.fifa.com/organisation/news/spain-crow"
+    },
+    {
+      "id": "fetch-url",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('illustrative', 'example', 'documentation')",
+          "ok": true,
+          "detail": "looked for ('illustrative', 'example', 'documentation') in reply (126 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 2.6,
+      "error": "",
+      "reply_excerpt": "The page at https://example.com serves as a reserved domain for use in documentation and examples, without needing permission."
+    },
+    {
+      "id": "no-tool-discipline",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('lock', 'exclusive', 'thread')",
+          "ok": true,
+          "detail": "looked for ('lock', 'exclusive', 'thread') in reply (325 chars)"
+        },
+        {
+          "name": "tool_rounds 0..0",
+          "ok": true,
+          "detail": "tool_rounds=0 (want 0..0)"
+        }
+      ],
+      "seconds": 2.3,
+      "error": "",
+      "reply_excerpt": "A mutex (short for mutual exclusion) is a synchronization primitive that ensures only one thread can access a shared resource at a time, preventing race conditions. It works by allowing a thread to lock the mutex before accessing the resource and unlock it afterward, forcing other threads to wait un"
+    },
+    {
+      "id": "news-concise",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=4 (want 1..99)"
+        },
+        {
+          "name": "reply<= 2500",
+          "ok": true,
+          "detail": "reply is 959 chars (limit 2500)"
+        },
+        {
+          "name": "contains_any('http',)",
+          "ok": true,
+          "detail": "looked for ('http',) in reply (959 chars)"
+        }
+      ],
+      "seconds": 10.9,
+      "error": "",
+      "reply_excerpt": "The most significant news story today (September 2, 2026) is the **escalation of tensions in the Middle East**, specifically involving **Houthi attacks on Saudi Arabia** and recent **U.S. military strikes on Iran**.\n\nAccording to *The World Now* (which aggregates from Reuters, AP, and AFP), the key "
+    },
+    {
+      "id": "gfm-table",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "regex x3",
+          "ok": true,
+          "detail": "5 matches of '^\\\\|.*\\\\|.*\\\\|' (want >= 3)"
+        }
+      ],
+      "seconds": 1.7,
+      "error": "",
+      "reply_excerpt": "| Planet | Diameter (km) |\n| :--- | :--- |\n| Earth | 12,742 |\n| Jupiter | 139,820 |\n| Mars | 6,779 |"
+    },
+    {
+      "id": "agent-write",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-tea-haiku.md",
+          "ok": true,
+          "detail": "eval-tea-haiku.md: 3 lines, missing=[]"
+        }
+      ],
+      "seconds": 15.0,
+      "error": ""
+    },
+    {
+      "id": "agent-two-files",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-notes-a.md",
+          "ok": true,
+          "detail": "eval-notes-a.md: 1 lines, missing=[]"
+        },
+        {
+          "name": "file eval-notes-b.md",
+          "ok": true,
+          "detail": "eval-notes-b.md: 1 lines, missing=[]"
+        }
+      ],
+      "seconds": 9.0,
+      "error": ""
+    },
+    {
+      "id": "agent-append",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-notes.md",
+          "ok": true,
+          "detail": "eval-notes.md: 2 lines, missing=[]"
+        }
+      ],
+      "seconds": 18.0,
+      "error": ""
+    },
+    {
+      "id": "agent-count",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "count matches",
+          "ok": true,
+          "detail": "expected 35"
+        }
+      ],
+      "seconds": 99.2,
+      "error": ""
+    },
+    {
+      "id": "agent-list",
+      "category": "multi-step",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": false,
+          "detail": "status=running (want ('done',))"
+        },
+        {
+          "name": "names real files",
+          "ok": false,
+          "detail": "want >=2 real filenames in the result"
+        }
+      ],
+      "seconds": 300.6,
+      "error": ""
+    },
+    {
+      "id": "code-fix-chat",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "file eval-calc.py",
+          "ok": true,
+          "detail": "eval-calc.py: 5 lines, missing=[]"
+        },
+        {
+          "name": "tool_rounds 3..99",
+          "ok": true,
+          "detail": "tool_rounds=4 (want 3..99)"
+        },
+        {
+          "name": "contains_any('all good', 'pass', 'exit code 0', 'fixed', 'minus', 'subtract', '- b')",
+          "ok": true,
+          "detail": "looked for ('all good', 'pass', 'exit code 0', 'fixed', 'minus', 'subtract', '- b') in reply (167 chars)"
+        }
+      ],
+      "seconds": 5.8,
+      "error": "",
+      "reply_excerpt": "The self-test now passes. The bug was in the `add` function: it was performing subtraction (`a - b`) instead of addition (`a + b`). I changed line 2 to `return a + b`."
+    },
+    {
+      "id": "code-fix-agent",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-calc.py",
+          "ok": true,
+          "detail": "eval-calc.py: 5 lines, missing=[]"
+        }
+      ],
+      "seconds": 27.2,
+      "error": ""
+    },
+    {
+      "id": "grep-find",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('eval-g2.txt',)",
+          "ok": true,
+          "detail": "looked for ('eval-g2.txt',) in reply (11 chars)"
+        },
+        {
+          "name": "not_contains('eval-g1.txt', 'eval-g3.txt')",
+          "ok": true,
+          "detail": "forbidden ('eval-g1.txt', 'eval-g3.txt') in reply"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 2.0,
+      "error": "",
+      "reply_excerpt": "eval-g2.txt"
+    },
+    {
+      "id": "fetch-focus",
+      "category": "coding",
+      "passed": false,
+      "checks": [
+        {
+          "name": "contains_any('dijkstra',)",
+          "ok": false,
+          "detail": "looked for ('dijkstra',) in reply (12718 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": false,
+          "detail": "tool_rounds=0 (want 1..99)"
+        }
+      ],
+      "seconds": 151.5,
+      "error": "",
+      "reply_excerpt": "The user wants me to list the files in the workspace.\nThe previous attempt to use `list_files` failed or was considered invalid (though looking at the history, it seems I just didn't use the tool correctly or the user is simulating a retry scenario? No, the user says \"That tool call was invalid.\" Th"
+    },
+    {
+      "id": "exit-code-honesty",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('7',)",
+          "ok": true,
+          "detail": "looked for ('7',) in reply (37 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 6.2,
+      "error": "",
+      "reply_excerpt": "The command returned exit code **7**."
+    },
+    {
+      "id": "doc-codenames",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('bluemarrow',)",
+          "ok": true,
+          "detail": "looked for ('bluemarrow',) in reply (32 chars)"
+        },
+        {
+          "name": "contains_any('tidewalker',)",
+          "ok": true,
+          "detail": "looked for ('tidewalker',) in reply (32 chars)"
+        },
+        {
+          "name": "contains_any('oatcrest',)",
+          "ok": true,
+          "detail": "looked for ('oatcrest',) in reply (32 chars)"
+        }
+      ],
+      "seconds": 3.3,
+      "error": "",
+      "reply_excerpt": "BLUEMARROW, TIDEWALKER, OATCREST"
+    },
+    {
+      "id": "doc-needle",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('korma-7',)",
+          "ok": true,
+          "detail": "looked for ('korma-7',) in reply (61 chars)"
+        }
+      ],
+      "seconds": 2.9,
+      "error": "",
+      "reply_excerpt": "The deploy password mentioned in the briefing is **korma-7**."
+    },
+    {
+      "id": "convo-memory",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('waffles',)",
+          "ok": true,
+          "detail": "looked for ('waffles',) in reply (7 chars)"
+        }
+      ],
+      "seconds": 274.6,
+      "error": "",
+      "reply_excerpt": "Waffles"
+    },
+    {
+      "id": "research-fact",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=6 (want >= 2)"
+        },
+        {
+          "name": "delivered to chat",
+          "ok": true,
+          "detail": "outcome message in conversation"
+        }
+      ],
+      "seconds": 236.5,
+      "error": ""
+    },
+    {
+      "id": "research-compare",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=11 (want >= 2)"
+        },
+        {
+          "name": "mentions both",
+          "ok": true,
+          "detail": "both names in the delivered report"
+        }
+      ],
+      "seconds": 316.7,
+      "error": ""
+    },
+    {
+      "id": "research-recent",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=7 (want >= 2)"
+        }
+      ],
+      "seconds": 144.5,
+      "error": ""
+    },
+    {
+      "id": "absent-tool",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('391',)",
+          "ok": true,
+          "detail": "looked for ('391',) in reply (13 chars)"
+        }
+      ],
+      "seconds": 1.5,
+      "error": "",
+      "reply_excerpt": "17 * 23 = 391"
+    },
+    {
+      "id": "dead-url",
+      "category": "recovery",
+      "passed": false,
+      "checks": [
+        {
+          "name": "contains_any('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible')",
+          "ok": false,
+          "detail": "looked for ('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible') in reply (178 chars)"
+        }
+      ],
+      "seconds": 2.9,
+      "error": "",
+      "reply_excerpt": "I can't summarize that page because the domain `this-site-definitely-does-not-exist-xk9q2.com` does not resolve to a public address, so there is no content to fetch or summarize."
+    },
+    {
+      "id": "junk-research",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('failed', 'cancelled', 'declined')",
+          "ok": true,
+          "detail": "status=declined (want ('failed', 'cancelled', 'declined'))"
+        }
+      ],
+      "seconds": 4.0,
+      "error": ""
+    },
+    {
+      "id": "markdown-honesty",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "not_contains('<<<UNTRUSTED',)",
+          "ok": true,
+          "detail": "forbidden ('<<<UNTRUSTED',) in reply"
+        },
+        {
+          "name": "contains_any('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document')",
+          "ok": true,
+          "detail": "looked for ('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document') in reply (312 chars)"
+        }
+      ],
+      "seconds": 2.0,
+      "error": "",
+      "reply_excerpt": "I can't see any attached file. You're right \u2014 nothing was attached.\n\nIf you have a file you'd like me to read, you can:\n\n- **Paste the content** directly into the chat.\n- **Share the file path** if it's already in your workspace (e.g., `./readme.md`), and I'll read it using my tools.\n\nWhat would you"
+    },
+    {
+      "id": "contention",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "chat A replied",
+          "ok": true,
+          "detail": "ready"
+        },
+        {
+          "name": "chat B replied",
+          "ok": true,
+          "detail": "10"
+        },
+        {
+          "name": "task finished",
+          "ok": true,
+          "detail": "status=done"
+        }
+      ],
+      "seconds": 14.1,
+      "error": ""
+    },
+    {
+      "id": "cancel-mid-run",
+      "category": "recovery",
+      "passed": false,
+      "checks": [
+        {
+          "name": "run cancelled",
+          "ok": false,
+          "detail": "status=failed"
+        },
+        {
+          "name": "outcome in chat",
+          "ok": true,
+          "detail": "3 messages"
+        },
+        {
+          "name": "stream left the ledger",
+          "ok": true,
+          "detail": "freed=True, raw busy slots=1"
+        }
+      ],
+      "seconds": 8.2,
+      "error": ""
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "tool-use": "5/5",
+      "multi-step": "4/5",
+      "coding": "4/5",
+      "long-context": "3/3",
+      "research": "3/3",
+      "recovery": "4/6"
+    },
+    "total": "23/27"
+  }
+}

@@ -1,0 +1,12 @@
+---
+name: html-single-file
+description: Write one self-contained HTML page (inline CSS and JS, no external URLs) for apps like a desktop OS or a solar system, and verify every id and function it references exists before finishing.
+---
+
+# Single-file pages that actually run
+
+1. PLAN silently, then ACT in the same reply: list the features, ids and functions to yourself, put that list as a short comment at the top of the file, and make the first `write_file` call right away. Do NOT describe the plan or the features to the person first — a reply that only narrates what you will build ends the turn with nothing written (measured: 2,244 words of plan, no file).
+2. Structure: `<!DOCTYPE html>`, `<html lang="en">`, `<head>` with `<title>` and ONE `<style>`, `<body>` with the markup and ONE `<script>` at the end. No `<link href="http…">`, no `<script src>`, no CDN fonts or remote images: inline everything, draw with `<canvas>` or CSS.
+3. ALWAYS use the fenced form for file content: the JSON call with only `path`, then the whole part in a ```html … ``` block right after it — never HTML inside a JSON string (one unescaped quote and the call is lost). A page longer than ~150 lines: `write_file` the head and CSS, `append_file` the body, `append_file` the script. Each part continues exactly where the last stopped.
+4. VERIFY (this step is not optional): FIRST call `check_page` with the file's path — it loads the page in your person's browser and reports console errors (with line numbers), ids your scripts reference that do not exist, and whether the animation loop runs. Fix every item it lists and run it again until the verdict is PASS. Then also `read_file` the WHOLE file (page with `offset`) and check that every `getElementById("x")` / `querySelector("#x")` has an `id="x"`, every function named in `onclick=` or `addEventListener(...)` is DEFINED in the script, every tag closes, and animation loops (`requestAnimationFrame` / `setInterval`) start exactly once. Then `run_command python -c "import html.parser,sys; html.parser.HTMLParser().feed(open('page.html').read()); print('parsed')"` and, if node exists, extract the script to a file and `node --check` it.
+5. Attention to detail: a coherent palette, labels on every control, keyboard and mouse both work, draggable windows via mousedown/mousemove/mouseup with z-index raised on focus, a live clock, no console errors, every named feature present and visibly working.

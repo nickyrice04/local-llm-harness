@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "seymour-setup-mode",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["scripts/dev-setup-mode.sh"],
+      "port": 8000
+    },
+    {
+      "name": "seymour",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["-m", "uvicorn", "seymour.app:app", "--host", "127.0.0.1", "--port", "8000"],
+      "port": 8000
+    }
+  ]
+}

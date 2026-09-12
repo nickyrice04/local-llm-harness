@@ -1,0 +1,66 @@
+# /Users/nickyrice/Documents/seymour-guide/seymour/.gitignore
+
+# ─────────────────────────────────────────────────────────────────────
+# SECRETS — the category that can cost you real money.
+# .env holds API keys and credentials. Committing one publishes it.
+# See §6.7 for what actually happens. Note we allow .env.example
+# (with fake values) so the file's SHAPE is documented in the repo.
+# ─────────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# ─────────────────────────────────────────────────────────────────────
+# MODEL WEIGHTS — tens of gigabytes. Git stores EVERY version forever,
+# so one 35 GB file committed twice is 70 GB of history that every
+# clone must download. GitHub rejects files over 100 MB anyway.
+# Weights are downloaded, not authored: they belong in a cache, and
+# the code that fetches them belongs in the repo instead.
+# ─────────────────────────────────────────────────────────────────────
+models/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.mlx
+
+# ─────────────────────────────────────────────────────────────────────
+# PYTHON — .venv is thousands of files that can be rebuilt in seconds
+# from your dependency list. __pycache__ is compiled bytecode: machine-
+# specific, regenerated automatically, pure noise in a diff.
+# ─────────────────────────────────────────────────────────────────────
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# ─────────────────────────────────────────────────────────────────────
+# NODE — same logic. node_modules/ can exceed 100k files and is fully
+# reconstructible from package-lock.json.
+# ─────────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+out/
+
+# ─────────────────────────────────────────────────────────────────────
+# LOCAL STATE — databases, logs, and anything else this machine
+# generates. Not source. Not shareable. Often contains your data.
+# ─────────────────────────────────────────────────────────────────────
+*.db
+*.sqlite3
+logs/
+*.log
+
+# ─────────────────────────────────────────────────────────────────────
+# macOS — .DS_Store is a Finder metadata file that appears in every
+# directory you open. Harmless, useless, and it will otherwise show up
+# in every diff you ever make.
+# ─────────────────────────────────────────────────────────────────────
+.DS_Store
+# Local model weights folder (capitalized on this machine) and build metadata.
+Models/
+*.egg-info/

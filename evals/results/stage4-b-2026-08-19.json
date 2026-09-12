@@ -1,0 +1,95 @@
+{
+  "version": 3,
+  "label": "stage4-b",
+  "date": "2026-08-19",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "serial",
+    "on_battery": true,
+    "battery_percent": 85
+  },
+  "tasks": [
+    {
+      "id": "no-tool-discipline",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('lock', 'exclusive', 'thread')",
+          "ok": true,
+          "detail": "looked for ('lock', 'exclusive', 'thread') in reply (326 chars)"
+        },
+        {
+          "name": "tool_rounds 0..0",
+          "ok": true,
+          "detail": "tool_rounds=0 (want 0..0)"
+        }
+      ],
+      "seconds": 1.2,
+      "error": "",
+      "reply_excerpt": "A mutex (mutual exclusion) is a synchronization primitive that ensures only one thread can access a shared resource at a time, preventing race conditions. It works by locking the resource when a thread enters a critical section and unlocking it when the thread leaves, forcing other threads to wait u"
+    },
+    {
+      "id": "news-concise",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=2 (want 1..99)"
+        },
+        {
+          "name": "reply<= 2500",
+          "ok": true,
+          "detail": "reply is 1168 chars (limit 2500)"
+        },
+        {
+          "name": "contains_any('http',)",
+          "ok": true,
+          "detail": "looked for ('http',) in reply (1168 chars)"
+        }
+      ],
+      "seconds": 7.0,
+      "error": "",
+      "reply_excerpt": "The search results provide homepage links for major news outlets rather than a specific article. To get a concrete article, I will fetch the latest headlines from the Associated Press, which is a primary source for breaking news.\n\nHere are a few of the most prominent breaking news stories from the A"
+    },
+    {
+      "id": "gfm-table",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "regex x3",
+          "ok": true,
+          "detail": "5 matches of '^\\\\|.*\\\\|.*\\\\|' (want >= 3)"
+        }
+      ],
+      "seconds": 1.0,
+      "error": "",
+      "reply_excerpt": "| Planet | Diameter (km) |\n| :--- | :--- |\n| Mercury | 4,879 |\n| Earth | 12,742 |\n| Jupiter | 139,820 |"
+    },
+    {
+      "id": "convo-memory",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('waffles',)",
+          "ok": true,
+          "detail": "looked for ('waffles',) in reply (7 chars)"
+        }
+      ],
+      "seconds": 3.6,
+      "error": "",
+      "reply_excerpt": "Waffles"
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "tool-use": "3/3",
+      "long-context": "1/1"
+    },
+    "total": "4/4"
+  }
+}

@@ -1,0 +1,8 @@
+region,product,units,unit_price,revenue
+north,widget,120,2.50,300.00
+north,gadget,40,10.00,400.00
+south,widget,300,2.50,750.00
+south,gizmo,15,45.00,675.00
+east,gadget,75,10.00,750.00
+west,gizmo,9,45.00,405.00
+TOTAL,,,3280.00

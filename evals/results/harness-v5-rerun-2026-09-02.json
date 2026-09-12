@@ -1,0 +1,99 @@
+{
+  "version": 5,
+  "label": "harness-v5-rerun",
+  "date": "2026-09-02",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": false,
+    "battery_percent": 75
+  },
+  "tasks": [
+    {
+      "id": "agent-list",
+      "category": "multi-step",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": false,
+          "detail": "status=blocked (want ('done',))"
+        },
+        {
+          "name": "names real files",
+          "ok": false,
+          "detail": "want >=2 real filenames in the result"
+        }
+      ],
+      "seconds": 69.3,
+      "error": ""
+    },
+    {
+      "id": "fetch-focus",
+      "category": "coding",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('dijkstra',)",
+          "ok": true,
+          "detail": "looked for ('dijkstra',) in reply (209 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 5.2,
+      "error": "",
+      "reply_excerpt": "Edsger W. Dijkstra first identified and solved the mutual exclusion problem in his 1965 paper \"Solution of a problem in concurrent programming control\" [source](https://en.wikipedia.org/wiki/Mutual_exclusion)."
+    },
+    {
+      "id": "dead-url",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible')",
+          "ok": true,
+          "detail": "looked for ('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible') in reply (192 chars)"
+        }
+      ],
+      "seconds": 3.5,
+      "error": "",
+      "reply_excerpt": "I can't summarize that site because it doesn't exist. The domain `this-site-definitely-does-not-exist-xk9q2.com` could not be resolved, meaning there is no website there to fetch or summarize."
+    },
+    {
+      "id": "cancel-mid-run",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "run cancelled",
+          "ok": true,
+          "detail": "status=cancelled"
+        },
+        {
+          "name": "outcome in chat",
+          "ok": true,
+          "detail": "3 messages"
+        },
+        {
+          "name": "stream left the ledger",
+          "ok": true,
+          "detail": "freed=True, raw busy slots=2"
+        }
+      ],
+      "seconds": 8.3,
+      "error": ""
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "multi-step": "0/1",
+      "coding": "1/1",
+      "recovery": "2/2"
+    },
+    "total": "3/4"
+  }
+}

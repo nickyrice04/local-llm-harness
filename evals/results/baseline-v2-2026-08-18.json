@@ -1,0 +1,441 @@
+{
+  "version": 2,
+  "label": "baseline-v2",
+  "date": "2026-08-18",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": false,
+    "battery_percent": 100
+  },
+  "tasks": [
+    {
+      "id": "web-fact",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('spain',)",
+          "ok": true,
+          "detail": "looked for ('spain',) in reply (203 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 7.1,
+      "error": "",
+      "reply_excerpt": "Spain won the 2026 FIFA World Cup, defeating Argentina 1\u20130 in extra time in the final [[2026 FIFA World Cup Final Result: Spain 1-0 Argentina (AET)]](https://worldcupwiki.com/2026-fifa-world-cup-final/)."
+    },
+    {
+      "id": "fetch-url",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('illustrative', 'example', 'documentation')",
+          "ok": true,
+          "detail": "looked for ('illustrative', 'example', 'documentation') in reply (103 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 12.7,
+      "error": "",
+      "reply_excerpt": "The page is for use in documentation examples without needing permission. [Source](https://example.com)"
+    },
+    {
+      "id": "no-tool-discipline",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('lock', 'exclusive', 'thread')",
+          "ok": true,
+          "detail": "looked for ('lock', 'exclusive', 'thread') in reply (310 chars)"
+        },
+        {
+          "name": "tool_rounds 0..0",
+          "ok": true,
+          "detail": "tool_rounds=0 (want 0..0)"
+        }
+      ],
+      "seconds": 13.1,
+      "error": "",
+      "reply_excerpt": "A mutex (short for \"mutual exclusion\") is a synchronization primitive that ensures only one thread can access a shared resource at a time. It works by requiring threads to lock it before entering a critical section and unlock it immediately after, which prevents race conditions and keeps your data c"
+    },
+    {
+      "id": "news-concise",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        },
+        {
+          "name": "reply<= 2500",
+          "ok": true,
+          "detail": "reply is 855 chars (limit 2500)"
+        },
+        {
+          "name": "contains_any('http',)",
+          "ok": true,
+          "detail": "looked for ('http',) in reply (855 chars)"
+        }
+      ],
+      "seconds": 9.5,
+      "error": "",
+      "reply_excerpt": "I found several live-updating news pages for today, August 18, 2026, but search snippets don't reveal the single latest breaking story. Here are the best places to see what just happened:\n\n*   **World News Today Live Updates** \u2013 Covers global developments as they unfold.  \n    https://www.livemint.c"
+    },
+    {
+      "id": "gfm-table",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "regex x3",
+          "ok": true,
+          "detail": "5 matches of '^\\\\|.*\\\\|.*\\\\|' (want >= 3)"
+        }
+      ],
+      "seconds": 6.6,
+      "error": "",
+      "reply_excerpt": "Here are the diameters for the three planets closest to the Sun:\n\n| Planet | Diameter (km) |\n| :--- | :--- |\n| Mercury | 4,879 |\n| Venus | 12,104 |\n| Earth | 12,742 |"
+    },
+    {
+      "id": "agent-write",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-tea-haiku.md",
+          "ok": true,
+          "detail": "eval-tea-haiku.md: 4 lines, missing=[]"
+        }
+      ],
+      "seconds": 39.1,
+      "error": ""
+    },
+    {
+      "id": "agent-two-files",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-notes-a.md",
+          "ok": true,
+          "detail": "eval-notes-a.md: 2 lines, missing=[]"
+        },
+        {
+          "name": "file eval-notes-b.md",
+          "ok": true,
+          "detail": "eval-notes-b.md: 2 lines, missing=[]"
+        }
+      ],
+      "seconds": 12.0,
+      "error": ""
+    },
+    {
+      "id": "agent-append",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-notes.md",
+          "ok": true,
+          "detail": "eval-notes.md: 2 lines, missing=[]"
+        }
+      ],
+      "seconds": 78.2,
+      "error": ""
+    },
+    {
+      "id": "agent-count",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "count matches",
+          "ok": true,
+          "detail": "expected 15"
+        }
+      ],
+      "seconds": 237.5,
+      "error": ""
+    },
+    {
+      "id": "agent-list",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "names real files",
+          "ok": true,
+          "detail": "want >=2 real filenames in the result"
+        }
+      ],
+      "seconds": 228.4,
+      "error": ""
+    },
+    {
+      "id": "doc-codenames",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('bluemarrow',)",
+          "ok": true,
+          "detail": "looked for ('bluemarrow',) in reply (30 chars)"
+        },
+        {
+          "name": "contains_any('tidewalker',)",
+          "ok": true,
+          "detail": "looked for ('tidewalker',) in reply (30 chars)"
+        },
+        {
+          "name": "contains_any('oatcrest',)",
+          "ok": true,
+          "detail": "looked for ('oatcrest',) in reply (30 chars)"
+        }
+      ],
+      "seconds": 7.7,
+      "error": "",
+      "reply_excerpt": "BLUEMARROW\nTIDEWALKER\nOATCREST"
+    },
+    {
+      "id": "doc-needle",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('korma-7',)",
+          "ok": true,
+          "detail": "looked for ('korma-7',) in reply (116 chars)"
+        }
+      ],
+      "seconds": 14.6,
+      "error": "",
+      "reply_excerpt": "The deploy password is **korma-7**.\n\nI found it tucked inside the section for the second initiative, **TIDEWALKER**."
+    },
+    {
+      "id": "convo-memory",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('waffles',)",
+          "ok": true,
+          "detail": "looked for ('waffles',) in reply (46 chars)"
+        }
+      ],
+      "seconds": 160.6,
+      "error": "",
+      "reply_excerpt": "Waffles. I remember she loves cardboard boxes."
+    },
+    {
+      "id": "research-fact",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=5 (want >= 2)"
+        },
+        {
+          "name": "delivered to chat",
+          "ok": true,
+          "detail": "outcome message in conversation"
+        }
+      ],
+      "seconds": 100.7,
+      "error": ""
+    },
+    {
+      "id": "research-compare",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=5 (want >= 2)"
+        },
+        {
+          "name": "mentions both",
+          "ok": true,
+          "detail": "both names in the delivered report"
+        }
+      ],
+      "seconds": 116.2,
+      "error": ""
+    },
+    {
+      "id": "research-recent",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=6 (want >= 2)"
+        }
+      ],
+      "seconds": 152.3,
+      "error": ""
+    },
+    {
+      "id": "absent-tool",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('391',)",
+          "ok": true,
+          "detail": "looked for ('391',) in reply (29 chars)"
+        }
+      ],
+      "seconds": 3.4,
+      "error": "",
+      "reply_excerpt": "The result of 17 * 23 is 391."
+    },
+    {
+      "id": "dead-url",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible')",
+          "ok": true,
+          "detail": "looked for ('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible') in reply (246 chars)"
+        }
+      ],
+      "seconds": 4.4,
+      "error": "",
+      "reply_excerpt": "The site `https://this-site-definitely-does-not-exist-xk9q2.com` could not be fetched because it does not appear to be a valid, publicly accessible URL (likely due to the domain not existing or not being configured for public HTTP/HTTPS traffic)."
+    },
+    {
+      "id": "junk-research",
+      "category": "recovery",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('failed', 'cancelled', 'declined')",
+          "ok": false,
+          "detail": "status=done (want ('failed', 'cancelled', 'declined'))"
+        }
+      ],
+      "seconds": 152.3,
+      "error": ""
+    },
+    {
+      "id": "markdown-honesty",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "not_contains('<<<UNTRUSTED',)",
+          "ok": true,
+          "detail": "forbidden ('<<<UNTRUSTED',) in reply"
+        },
+        {
+          "name": "contains_any('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document')",
+          "ok": true,
+          "detail": "looked for ('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document') in reply (117 chars)"
+        }
+      ],
+      "seconds": 6.5,
+      "error": "",
+      "reply_excerpt": "I don't see any attached file.\n\nDid Waffles knock it off the desk? I'm ready to read it whenever you can get it here!"
+    },
+    {
+      "id": "contention",
+      "category": "recovery",
+      "passed": false,
+      "checks": [],
+      "seconds": 180.1,
+      "error": "ReadTimeout: "
+    },
+    {
+      "id": "cancel-mid-run",
+      "category": "recovery",
+      "passed": false,
+      "checks": [
+        {
+          "name": "run cancelled",
+          "ok": true,
+          "detail": "status=cancelled"
+        },
+        {
+          "name": "outcome in chat",
+          "ok": true,
+          "detail": "3 messages"
+        },
+        {
+          "name": "slots freed",
+          "ok": false,
+          "detail": "busy slots=1"
+        }
+      ],
+      "seconds": 14.1,
+      "error": ""
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "tool-use": "5/5",
+      "multi-step": "5/5",
+      "long-context": "3/3",
+      "research": "3/3",
+      "recovery": "3/6"
+    },
+    "total": "19/22"
+  }
+}

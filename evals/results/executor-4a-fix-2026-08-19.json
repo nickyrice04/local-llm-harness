@@ -1,0 +1,44 @@
+{
+  "version": 3,
+  "label": "executor-4a-fix",
+  "date": "2026-08-19",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": false,
+    "battery_percent": 87
+  },
+  "tasks": [
+    {
+      "id": "news-concise",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=2 (want 1..99)"
+        },
+        {
+          "name": "reply<= 2500",
+          "ok": true,
+          "detail": "reply is 607 chars (limit 2500)"
+        },
+        {
+          "name": "contains_any('http',)",
+          "ok": true,
+          "detail": "looked for ('http',) in reply (607 chars)"
+        }
+      ],
+      "seconds": 6.1,
+      "error": "",
+      "reply_excerpt": "The most prominent news story for August 19, 2026, focuses on geopolitical shifts in the Middle East:\n\n**Strait of Hormuz Dynamics**\nIran\u2019s influence over the Strait of Hormuz is weakening as approximately 80% of vessels now prefer a UN-authorised route through Oman. This shift comes amid strengthen"
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "tool-use": "1/1"
+    },
+    "total": "1/1"
+  }
+}

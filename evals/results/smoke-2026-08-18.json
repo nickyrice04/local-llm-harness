@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "label": "smoke",
+  "date": "2026-08-18",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": false,
+    "battery_percent": 100
+  },
+  "tasks": [
+    {
+      "id": "no-tool-discipline",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('lock', 'exclusive', 'thread')",
+          "ok": true,
+          "detail": "looked for ('lock', 'exclusive', 'thread') in reply (284 chars)"
+        },
+        {
+          "name": "tool_rounds 0..0",
+          "ok": true,
+          "detail": "tool_rounds=0 (want 0..0)"
+        }
+      ],
+      "seconds": 10.9,
+      "error": "",
+      "reply_excerpt": "A mutex (short for mutual exclusion) is a synchronization primitive that ensures only one thread or process can access a shared resource at a time. It works by locking the resource while it\u2019s in use and unlocking it afterward, which prevents race conditions and keeps data consistent."
+    },
+    {
+      "id": "gfm-table",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "regex x3",
+          "ok": true,
+          "detail": "5 matches of '^\\\\|.*\\\\|.*\\\\|' (want >= 3)"
+        }
+      ],
+      "seconds": 9.1,
+      "error": "",
+      "reply_excerpt": "Here is the table for Earth, Mars, and Jupiter:\n\n| Planet | Diameter (km) |\n| :--- | :--- |\n| Earth | 12,742 |\n| Mars | 6,779 |\n| Jupiter | 139,820 |"
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "tool-use": "2/2"
+    },
+    "total": "2/2"
+  }
+}

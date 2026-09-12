@@ -1,0 +1,226 @@
+{
+  "version": 3,
+  "label": "executor-4a",
+  "date": "2026-08-19",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": false,
+    "battery_percent": 86
+  },
+  "tasks": [
+    {
+      "id": "web-fact",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('spain',)",
+          "ok": true,
+          "detail": "looked for ('spain',) in reply (86 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 3.9,
+      "error": "",
+      "reply_excerpt": "Spain won the 2026 FIFA World Cup, defeating Argentina 1-0 in extra time in the final."
+    },
+    {
+      "id": "fetch-url",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('illustrative', 'example', 'documentation')",
+          "ok": true,
+          "detail": "looked for ('illustrative', 'example', 'documentation') in reply (109 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 1.9,
+      "error": "",
+      "reply_excerpt": "The page serves as a reserved domain for use in documentation examples to avoid conflicts with real websites."
+    },
+    {
+      "id": "no-tool-discipline",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('lock', 'exclusive', 'thread')",
+          "ok": true,
+          "detail": "looked for ('lock', 'exclusive', 'thread') in reply (323 chars)"
+        },
+        {
+          "name": "tool_rounds 0..0",
+          "ok": true,
+          "detail": "tool_rounds=0 (want 0..0)"
+        }
+      ],
+      "seconds": 1.9,
+      "error": "",
+      "reply_excerpt": "A mutex (short for \"mutual exclusion\") is a synchronization primitive used in concurrent programming to ensure that only one thread can access a shared resource at a time. It works by allowing a thread to lock the mutex before accessing the resource and unlock it afterwards, preventing race conditio"
+    },
+    {
+      "id": "news-concise",
+      "category": "tool-use",
+      "passed": false,
+      "checks": [
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=2 (want 1..99)"
+        },
+        {
+          "name": "reply<= 2500",
+          "ok": true,
+          "detail": "reply is 1068 chars (limit 2500)"
+        },
+        {
+          "name": "contains_any('http',)",
+          "ok": false,
+          "detail": "looked for ('http',) in reply (1068 chars)"
+        }
+      ],
+      "seconds": 9.7,
+      "error": "",
+      "reply_excerpt": "Here are the top stories from the Associated Press right now:\n\n**World & Politics**\n*   **Moscow & Ukraine Conflict:** The Moscow region was hit by a drone blitz, while Russian missiles killed 10 people in a Ukrainian village.\n*   **Middle East Tensions:** Trump stated the US has no talks planned wi"
+    },
+    {
+      "id": "gfm-table",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "regex x3",
+          "ok": true,
+          "detail": "5 matches of '^\\\\|.*\\\\|.*\\\\|' (want >= 3)"
+        }
+      ],
+      "seconds": 2.5,
+      "error": "",
+      "reply_excerpt": "Here is a table of three planets and their approximate equatorial diameters:\n\n| Planet | Diameter (km) |\n| :--- | :--- |\n| Earth | 12,742 |\n| Mars | 6,779 |\n| Jupiter | 139,820 |"
+    },
+    {
+      "id": "doc-codenames",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('bluemarrow',)",
+          "ok": true,
+          "detail": "looked for ('bluemarrow',) in reply (32 chars)"
+        },
+        {
+          "name": "contains_any('tidewalker',)",
+          "ok": true,
+          "detail": "looked for ('tidewalker',) in reply (32 chars)"
+        },
+        {
+          "name": "contains_any('oatcrest',)",
+          "ok": true,
+          "detail": "looked for ('oatcrest',) in reply (32 chars)"
+        }
+      ],
+      "seconds": 3.2,
+      "error": "",
+      "reply_excerpt": "BLUEMARROW, TIDEWALKER, OATCREST"
+    },
+    {
+      "id": "doc-needle",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('korma-7',)",
+          "ok": true,
+          "detail": "looked for ('korma-7',) in reply (70 chars)"
+        }
+      ],
+      "seconds": 4.0,
+      "error": "",
+      "reply_excerpt": "The deploy password mentioned in the attached briefing is **korma-7**."
+    },
+    {
+      "id": "convo-memory",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('waffles',)",
+          "ok": true,
+          "detail": "looked for ('waffles',) in reply (7 chars)"
+        }
+      ],
+      "seconds": 4.5,
+      "error": "",
+      "reply_excerpt": "Waffles"
+    },
+    {
+      "id": "absent-tool",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('391',)",
+          "ok": true,
+          "detail": "looked for ('391',) in reply (101 chars)"
+        }
+      ],
+      "seconds": 1.1,
+      "error": "",
+      "reply_excerpt": "The result is 391.\n\nI don't have a specific \"calculator\" tool, but I can perform arithmetic directly."
+    },
+    {
+      "id": "dead-url",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible')",
+          "ok": true,
+          "detail": "looked for ('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible') in reply (147 chars)"
+        }
+      ],
+      "seconds": 3.7,
+      "error": "",
+      "reply_excerpt": "I can't summarize that site because it doesn't exist. The fetch tool refused the request, indicating the domain is not a valid, public web address."
+    },
+    {
+      "id": "markdown-honesty",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "not_contains('<<<UNTRUSTED',)",
+          "ok": true,
+          "detail": "forbidden ('<<<UNTRUSTED',) in reply"
+        },
+        {
+          "name": "contains_any('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document')",
+          "ok": true,
+          "detail": "looked for ('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document') in reply (96 chars)"
+        }
+      ],
+      "seconds": 1.5,
+      "error": "",
+      "reply_excerpt": "There is no file attached to this message. I only see the context notes about your cat, Waffles."
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "tool-use": "4/5",
+      "long-context": "3/3",
+      "recovery": "3/3"
+    },
+    "total": "10/11"
+  }
+}

@@ -1,0 +1,445 @@
+{
+  "version": 3,
+  "label": "baseline-v3",
+  "date": "2026-08-18",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "concurrent",
+    "on_battery": false,
+    "battery_percent": 100
+  },
+  "tasks": [
+    {
+      "id": "web-fact",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('spain',)",
+          "ok": true,
+          "detail": "looked for ('spain',) in reply (248 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 6.1,
+      "error": "",
+      "reply_excerpt": "Spain won the 2026 FIFA World Cup. They defeated Argentina 1-0 in the final, which was played in the New York/New Jersey area [[inside.fifa.com](https://inside.fifa.com/organisation/news/spain-crowned-world-cup-2026-champions-new-york-new-jersey)]."
+    },
+    {
+      "id": "fetch-url",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('illustrative', 'example', 'documentation')",
+          "ok": true,
+          "detail": "looked for ('illustrative', 'example', 'documentation') in reply (152 chars)"
+        },
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        }
+      ],
+      "seconds": 22.1,
+      "error": "",
+      "reply_excerpt": "The page is a reserved domain used for illustrative examples in documentation and testing, requiring no permission and not intended for live operations."
+    },
+    {
+      "id": "no-tool-discipline",
+      "category": "tool-use",
+      "passed": false,
+      "checks": [],
+      "seconds": 180.0,
+      "error": "ReadTimeout: "
+    },
+    {
+      "id": "news-concise",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "tool_rounds 1..99",
+          "ok": true,
+          "detail": "tool_rounds=1 (want 1..99)"
+        },
+        {
+          "name": "reply<= 2500",
+          "ok": true,
+          "detail": "reply is 739 chars (limit 2500)"
+        },
+        {
+          "name": "contains_any('http',)",
+          "ok": true,
+          "detail": "looked for ('http',) in reply (739 chars)"
+        }
+      ],
+      "seconds": 6.5,
+      "error": "",
+      "reply_excerpt": "The search results provided links to the homepages of major news organizations (CNN, Fox News, CBS, AP) rather than specific articles with timestamps. Because I cannot browse live content beyond these landing pages, I cannot extract a specific \"most recent\" article with a headline and time.\n\nTo get "
+    },
+    {
+      "id": "gfm-table",
+      "category": "tool-use",
+      "passed": true,
+      "checks": [
+        {
+          "name": "regex x3",
+          "ok": true,
+          "detail": "5 matches of '^\\\\|.*\\\\|.*\\\\|' (want >= 3)"
+        }
+      ],
+      "seconds": 19.9,
+      "error": "",
+      "reply_excerpt": "Here you go:\n\n| Planet  | Diameter (km) |\n|---------|---------------|\n| Earth   | 12,742        |\n| Jupiter | 139,820       |\n| Mars    | 6,779         |\n\nI chose those three to show a nice range from a medium-sized rocky world to the largest gas giant and a smaller neighbor. Let me know if you want"
+    },
+    {
+      "id": "agent-write",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-tea-haiku.md",
+          "ok": true,
+          "detail": "eval-tea-haiku.md: 3 lines, missing=[]"
+        }
+      ],
+      "seconds": 111.3,
+      "error": ""
+    },
+    {
+      "id": "agent-two-files",
+      "category": "multi-step",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": false,
+          "detail": "status=running (want ('done',))"
+        },
+        {
+          "name": "file eval-notes-a.md",
+          "ok": false,
+          "detail": "eval-notes-a.md does not exist"
+        },
+        {
+          "name": "file eval-notes-b.md",
+          "ok": false,
+          "detail": "eval-notes-b.md does not exist"
+        }
+      ],
+      "seconds": 300.7,
+      "error": ""
+    },
+    {
+      "id": "agent-append",
+      "category": "multi-step",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "file eval-notes.md",
+          "ok": true,
+          "detail": "eval-notes.md: 2 lines, missing=[]"
+        }
+      ],
+      "seconds": 84.2,
+      "error": ""
+    },
+    {
+      "id": "agent-count",
+      "category": "multi-step",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "count matches",
+          "ok": false,
+          "detail": "expected 17"
+        }
+      ],
+      "seconds": 90.2,
+      "error": ""
+    },
+    {
+      "id": "agent-list",
+      "category": "multi-step",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": false,
+          "detail": "status=running (want ('done',))"
+        },
+        {
+          "name": "names real files",
+          "ok": false,
+          "detail": "want >=2 real filenames in the result"
+        }
+      ],
+      "seconds": 300.7,
+      "error": ""
+    },
+    {
+      "id": "doc-codenames",
+      "category": "long-context",
+      "passed": false,
+      "checks": [
+        {
+          "name": "contains_any('bluemarrow',)",
+          "ok": false,
+          "detail": "looked for ('bluemarrow',) in reply (25 chars)"
+        },
+        {
+          "name": "contains_any('tidewalker',)",
+          "ok": true,
+          "detail": "looked for ('tidewalker',) in reply (25 chars)"
+        },
+        {
+          "name": "contains_any('oatcrest',)",
+          "ok": true,
+          "detail": "looked for ('oatcrest',) in reply (25 chars)"
+        }
+      ],
+      "seconds": 43.9,
+      "error": "",
+      "reply_excerpt": "ALPHA\nTIDEWALKER\nOATCREST"
+    },
+    {
+      "id": "doc-needle",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('korma-7',)",
+          "ok": true,
+          "detail": "looked for ('korma-7',) in reply (35 chars)"
+        }
+      ],
+      "seconds": 14.3,
+      "error": "",
+      "reply_excerpt": "The deploy password is **korma-7**."
+    },
+    {
+      "id": "convo-memory",
+      "category": "long-context",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('waffles',)",
+          "ok": true,
+          "detail": "looked for ('waffles',) in reply (7 chars)"
+        }
+      ],
+      "seconds": 140.4,
+      "error": "",
+      "reply_excerpt": "Waffles"
+    },
+    {
+      "id": "research-fact",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=5 (want >= 2)"
+        },
+        {
+          "name": "delivered to chat",
+          "ok": true,
+          "detail": "outcome message in conversation"
+        }
+      ],
+      "seconds": 200.4,
+      "error": ""
+    },
+    {
+      "id": "research-compare",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=4 (want >= 2)"
+        },
+        {
+          "name": "mentions both",
+          "ok": true,
+          "detail": "both names in the delivered report"
+        }
+      ],
+      "seconds": 180.4,
+      "error": ""
+    },
+    {
+      "id": "research-recent",
+      "category": "research",
+      "passed": true,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": true,
+          "detail": "status=done (want ('done',))"
+        },
+        {
+          "name": "sources >= 2",
+          "ok": true,
+          "detail": "sources=5 (want >= 2)"
+        }
+      ],
+      "seconds": 176.4,
+      "error": ""
+    },
+    {
+      "id": "absent-tool",
+      "category": "recovery",
+      "passed": false,
+      "checks": [
+        {
+          "name": "contains_any('391',)",
+          "ok": false,
+          "detail": "looked for ('391',) in reply (83 chars)"
+        }
+      ],
+      "seconds": 74.5,
+      "error": "",
+      "reply_excerpt": "I ran out of room before writing an answer \u2014 ask again and I'll get straight to it."
+    },
+    {
+      "id": "dead-url",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible')",
+          "ok": true,
+          "detail": "looked for ('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible') in reply (257 chars)"
+        }
+      ],
+      "seconds": 22.4,
+      "error": "",
+      "reply_excerpt": "The site `https://this-site-definitely-does-not-exist-xk9q2.com` could not be fetched. The system returned an error stating that the URL is not a public HTTP(S) URL, which typically means the domain does not exist or is not accessible over the standard web."
+    },
+    {
+      "id": "junk-research",
+      "category": "recovery",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('failed', 'cancelled', 'declined')",
+          "ok": false,
+          "detail": "status=done (want ('failed', 'cancelled', 'declined'))"
+        }
+      ],
+      "seconds": 192.4,
+      "error": ""
+    },
+    {
+      "id": "markdown-honesty",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "not_contains('<<<UNTRUSTED',)",
+          "ok": true,
+          "detail": "forbidden ('<<<UNTRUSTED',) in reply"
+        },
+        {
+          "name": "contains_any('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document')",
+          "ok": true,
+          "detail": "looked for ('no file', 'nothing attached', \"don't see\", 'do not see', \"can't see\", 'cannot see', 'no attach', \"didn't attach\", 'did not attach', 'no document') in reply (190 chars)"
+        }
+      ],
+      "seconds": 18.2,
+      "error": "",
+      "reply_excerpt": "I don't see any attached file. You mentioned you attached nothing, so that checks out! If you have text you'd like me to read, feel free to paste it directly here or attach a file next time."
+    },
+    {
+      "id": "contention",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "chat A replied",
+          "ok": true,
+          "detail": "Ready"
+        },
+        {
+          "name": "chat B replied",
+          "ok": true,
+          "detail": "10"
+        },
+        {
+          "name": "task finished",
+          "ok": true,
+          "detail": "status=done"
+        }
+      ],
+      "seconds": 93.9,
+      "error": ""
+    },
+    {
+      "id": "cancel-mid-run",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "run cancelled",
+          "ok": true,
+          "detail": "status=cancelled"
+        },
+        {
+          "name": "outcome in chat",
+          "ok": true,
+          "detail": "3 messages"
+        },
+        {
+          "name": "stream left the ledger",
+          "ok": true,
+          "detail": "freed=True, raw busy slots=1"
+        }
+      ],
+      "seconds": 8.4,
+      "error": ""
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "tool-use": "4/5",
+      "multi-step": "2/5",
+      "long-context": "2/3",
+      "research": "3/3",
+      "recovery": "4/6"
+    },
+    "total": "15/22"
+  }
+}

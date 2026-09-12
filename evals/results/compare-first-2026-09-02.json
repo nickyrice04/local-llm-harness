@@ -1,0 +1,582 @@
+{
+ "label": "first",
+ "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+ "records": [
+  {
+   "harness": "seymour",
+   "task": "csv-revenue-column",
+   "category": "office",
+   "status": "done",
+   "seconds": 36.1,
+   "score": 1.0,
+   "tool_calls": 3,
+   "checks": [
+    {
+     "name": "sales_with_revenue.csv exists",
+     "ok": true,
+     "detail": "sales_with_revenue.csv"
+    },
+    {
+     "name": "has a revenue header",
+     "ok": true,
+     "detail": "header=['region', 'product', 'units', 'unit_price', 'revenue']"
+    },
+    {
+     "name": "has a TOTAL row",
+     "ok": true,
+     "detail": "TOTAL row"
+    },
+    {
+     "name": "total is 3280",
+     "ok": true,
+     "detail": "total revenue should be 3280.00 (300+400+750+675+750+405)"
+    }
+   ],
+   "artifacts": [
+    "compare-first/seymour/csv-revenue-column/sales_with_revenue.csv"
+   ],
+   "final": "I added the `revenue` column (units \u00d7 unit_price) to every row of `sales.csv` and appended a `TOTAL` row with the sum of all revenue (3280.00). The result is saved in `sales_with_revenue.csv` and verified."
+  },
+  {
+   "harness": "dsh",
+   "task": "csv-revenue-column",
+   "category": "office",
+   "status": "done",
+   "seconds": 24.5,
+   "score": 1.0,
+   "tool_calls": 3,
+   "checks": [
+    {
+     "name": "sales_with_revenue.csv exists",
+     "ok": true,
+     "detail": "sales_with_revenue.csv"
+    },
+    {
+     "name": "has a revenue header",
+     "ok": true,
+     "detail": "header=['region', 'product', 'units', 'unit_price', 'revenue']"
+    },
+    {
+     "name": "has a TOTAL row",
+     "ok": true,
+     "detail": "TOTAL row"
+    },
+    {
+     "name": "total is 3280",
+     "ok": true,
+     "detail": "total revenue should be 3280.00 (300+400+750+675+750+405)"
+    }
+   ],
+   "artifacts": [
+    "compare-first/dsh/csv-revenue-column/sales_with_revenue.csv"
+   ],
+   "final": "Done. Here's a summary of the result in `sales_with_revenue.csv`:\n\n| # | region | product | units | unit_price | revenue |\n|---|--------|---------|-------|------------|---------|\n| 2 | north | widget | 120 | 2.50 | 300.00 |\n| 3 | north | gadget | 40 | 10.00 | 400.00 |\n| 4 | south | widget | 300 | 2.50 | 750.00 |\n| 5 | south | gizmo | 15 | 45.00 | 675.00 |\n| 6 | east | gadget | 75 | 10.00 | 750.00 "
+  },
+  {
+   "harness": "seymour",
+   "task": "xlsx-budget-workbook",
+   "category": "office",
+   "status": "done",
+   "seconds": 64.1,
+   "score": 1.0,
+   "tool_calls": 4,
+   "checks": [
+    {
+     "name": "budget.xlsx exists",
+     "ok": true,
+     "detail": "budget.xlsx"
+    },
+    {
+     "name": "two sheets Budget + Notes",
+     "ok": true,
+     "detail": "['Budget', 'Notes']"
+    },
+    {
+     "name": "Total column uses SUM formulas",
+     "ok": true,
+     "detail": "formulas present"
+    },
+    {
+     "name": "5 categories + totals",
+     "ok": true,
+     "detail": "7 rows"
+    },
+    {
+     "name": "header is bold",
+     "ok": true,
+     "detail": "A1 bold"
+    }
+   ],
+   "artifacts": [
+    "compare-first/seymour/xlsx-budget-workbook/budget.xlsx"
+   ],
+   "final": "Created `budget.xlsx` with the 'Budget' sheet (headers, 5 expense rows, formulas for Total and Monthly Total) and 'Notes' sheet. Verified the file structure and formulas using `verify_budget.py`."
+  },
+  {
+   "harness": "dsh",
+   "task": "xlsx-budget-workbook",
+   "category": "office",
+   "status": "done",
+   "seconds": 46.6,
+   "score": 1.0,
+   "tool_calls": 5,
+   "checks": [
+    {
+     "name": "budget.xlsx exists",
+     "ok": true,
+     "detail": "budget.xlsx"
+    },
+    {
+     "name": "two sheets Budget + Notes",
+     "ok": true,
+     "detail": "['Budget', 'Notes']"
+    },
+    {
+     "name": "Total column uses SUM formulas",
+     "ok": true,
+     "detail": "formulas present"
+    },
+    {
+     "name": "5 categories + totals",
+     "ok": true,
+     "detail": "7 rows"
+    },
+    {
+     "name": "header is bold",
+     "ok": true,
+     "detail": "A1 bold"
+    }
+   ],
+   "artifacts": [
+    "compare-first/dsh/xlsx-budget-workbook/budget.xlsx"
+   ],
+   "final": "Here's a summary of what was created and verified:\n\n**File:** `budget.xlsx` in `/private/tmp/seymour-compare/first/xlsx-budget-workbook/ws`\n\n**Sheet \"Budget\":**\n| Row | Category | Jan | Feb | Mar | Total (formula) |\n|-----|----------|-----|-----|-----|-----------------|\n| 1 | **Category** | **Jan** | **Feb** | **Mar** | **Total** | *(bold header)* |\n| 2 | Rent | 1200 | 1200 | 1200 | `=SUM(B2:D2)` "
+  },
+  {
+   "harness": "seymour",
+   "task": "pptx-five-slides",
+   "category": "office",
+   "status": "done",
+   "seconds": 88.2,
+   "score": 1.0,
+   "tool_calls": 7,
+   "checks": [
+    {
+     "name": "seymour_pitch.pptx exists",
+     "ok": true,
+     "detail": "seymour_pitch.pptx"
+    },
+    {
+     "name": "exactly 5 slides",
+     "ok": true,
+     "detail": "5 slides"
+    },
+    {
+     "name": "every slide has text",
+     "ok": true,
+     "detail": "every slide has text"
+    },
+    {
+     "name": "speaker notes on two slides",
+     "ok": true,
+     "detail": "notes on >=2 slides"
+    },
+    {
+     "name": "on topic",
+     "ok": true,
+     "detail": "mentions Seymour"
+    }
+   ],
+   "artifacts": [
+    "compare-first/seymour/pptx-five-slides/seymour_pitch.pptx"
+   ],
+   "final": "Created seymour_pitch.pptx with 5 slides covering the idea, how it works, why local, and next steps. Speaker notes were added to slides 2 and 4. The file was verified to load correctly and contain the expected number of slides and notes."
+  },
+  {
+   "harness": "dsh",
+   "task": "pptx-five-slides",
+   "category": "office",
+   "status": "done",
+   "seconds": 90.3,
+   "score": 1.0,
+   "tool_calls": 12,
+   "checks": [
+    {
+     "name": "seymour_pitch.pptx exists",
+     "ok": true,
+     "detail": "seymour_pitch.pptx"
+    },
+    {
+     "name": "exactly 5 slides",
+     "ok": true,
+     "detail": "5 slides"
+    },
+    {
+     "name": "every slide has text",
+     "ok": true,
+     "detail": "every slide has text"
+    },
+    {
+     "name": "speaker notes on two slides",
+     "ok": true,
+     "detail": "notes on >=2 slides"
+    },
+    {
+     "name": "on topic",
+     "ok": true,
+     "detail": "mentions Seymour"
+    }
+   ],
+   "artifacts": [
+    "compare-first/dsh/pptx-five-slides/seymour_pitch.pptx"
+   ],
+   "final": "Done. `seymour_pitch.pptx` has been created and verified. Here's what's in the deck:\n\n| Slide | Title | Content | Speaker Notes |\n|-------|-------|---------|---------------|\n| 1 | **Seymour** | Subtitle: *\"A Local-First AI Workspace \u2014 Built for Speed, Privacy, and You\"* | \u2705 Present |\n| 2 | **The Idea** | 4 bullet points (personal/private/fast, local workspace, data stays local, open architecture) "
+  },
+  {
+   "harness": "seymour",
+   "task": "html-solar-system",
+   "category": "web",
+   "status": "timeout",
+   "seconds": 601.1,
+   "score": 0.0,
+   "tool_calls": 1,
+   "checks": [
+    {
+     "name": "solar_system.html exists",
+     "ok": false,
+     "detail": "solar_system.html"
+    },
+    {
+     "name": "solar_system.html is a complete HTML document with script",
+     "ok": false,
+     "detail": "solar_system.html missing"
+    },
+    {
+     "name": "solar_system.html is self-contained",
+     "ok": false,
+     "detail": "solar_system.html missing"
+    },
+    {
+     "name": "uses a canvas",
+     "ok": false,
+     "detail": "solar_system.html missing"
+    },
+    {
+     "name": "animates with requestAnimationFrame",
+     "ok": false,
+     "detail": "solar_system.html missing"
+    },
+    {
+     "name": "solar_system.html has ('mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune')",
+     "ok": false,
+     "detail": "solar_system.html missing"
+    },
+    {
+     "name": "has a speed slider",
+     "ok": false,
+     "detail": "solar_system.html missing"
+    },
+    {
+     "name": "has pause/play",
+     "ok": false,
+     "detail": "solar_system.html missing"
+    },
+    {
+     "name": "solar_system.html >= 6 KB",
+     "ok": false,
+     "detail": "0 bytes"
+    }
+   ],
+   "artifacts": [],
+   "final": ""
+  },
+  {
+   "harness": "dsh",
+   "task": "html-solar-system",
+   "category": "web",
+   "status": "done",
+   "seconds": 115.7,
+   "score": 1.0,
+   "tool_calls": 3,
+   "checks": [
+    {
+     "name": "solar_system.html exists",
+     "ok": true,
+     "detail": "solar_system.html"
+    },
+    {
+     "name": "solar_system.html is a complete HTML document with script",
+     "ok": true,
+     "detail": "16 tags; script=True"
+    },
+    {
+     "name": "solar_system.html is self-contained",
+     "ok": true,
+     "detail": "0 external references"
+    },
+    {
+     "name": "uses a canvas",
+     "ok": true,
+     "detail": "<canvas"
+    },
+    {
+     "name": "animates with requestAnimationFrame",
+     "ok": true,
+     "detail": "requestAnimationFrame"
+    },
+    {
+     "name": "solar_system.html has ('mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune')",
+     "ok": true,
+     "detail": "found ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'] of ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'n"
+    },
+    {
+     "name": "has a speed slider",
+     "ok": true,
+     "detail": "type\\s*=\\s*[\"\\']range[\"\\']"
+    },
+    {
+     "name": "has pause/play",
+     "ok": true,
+     "detail": "pause|play"
+    },
+    {
+     "name": "solar_system.html >= 6 KB",
+     "ok": true,
+     "detail": "12264 bytes"
+    }
+   ],
+   "artifacts": [
+    "compare-first/dsh/html-solar-system/solar_system.html"
+   ],
+   "final": "The file has been created successfully at `/private/tmp/seymour-compare/first/html-solar-system/ws/solar_system.html` (388 lines). Here's a summary of what's included:\n\n**Visual elements:**\n- **Sun** \u2014 centered with multi-layer radial gradient, corona shimmer effect, and outer glow halos\n- **8 planets** (Mercury through Neptune) \u2014 each with distinct colors, sizes, and orbital speeds proportional t"
+  },
+  {
+   "harness": "seymour",
+   "task": "html-desktop-os",
+   "category": "web",
+   "status": "timeout",
+   "seconds": 600.8,
+   "score": 0.0,
+   "tool_calls": 0,
+   "checks": [
+    {
+     "name": "os.html exists",
+     "ok": false,
+     "detail": "os.html"
+    },
+    {
+     "name": "os.html is a complete HTML document with script",
+     "ok": false,
+     "detail": "os.html missing"
+    },
+    {
+     "name": "os.html is self-contained",
+     "ok": false,
+     "detail": "os.html missing"
+    },
+    {
+     "name": "draggable windows",
+     "ok": false,
+     "detail": "os.html missing"
+    },
+    {
+     "name": "live clock",
+     "ok": false,
+     "detail": "os.html missing"
+    },
+    {
+     "name": "os.html has ('calculator', 'notepad', 'about')",
+     "ok": false,
+     "detail": "os.html missing"
+    },
+    {
+     "name": "window stacking",
+     "ok": false,
+     "detail": "os.html missing"
+    },
+    {
+     "name": "typeable notepad",
+     "ok": false,
+     "detail": "os.html missing"
+    },
+    {
+     "name": "os.html >= 8 KB",
+     "ok": false,
+     "detail": "0 bytes"
+    }
+   ],
+   "artifacts": [],
+   "final": ""
+  },
+  {
+   "harness": "dsh",
+   "task": "html-desktop-os",
+   "category": "web",
+   "status": "done",
+   "seconds": 172.8,
+   "score": 1.0,
+   "tool_calls": 3,
+   "checks": [
+    {
+     "name": "os.html exists",
+     "ok": true,
+     "detail": "os.html"
+    },
+    {
+     "name": "os.html is a complete HTML document with script",
+     "ok": true,
+     "detail": "36 tags; script=True"
+    },
+    {
+     "name": "os.html is self-contained",
+     "ok": true,
+     "detail": "0 external references"
+    },
+    {
+     "name": "draggable windows",
+     "ok": true,
+     "detail": "mousedown|pointerdown|dragstart"
+    },
+    {
+     "name": "live clock",
+     "ok": true,
+     "detail": "setInterval|requestAnimationFrame"
+    },
+    {
+     "name": "os.html has ('calculator', 'notepad', 'about')",
+     "ok": true,
+     "detail": "found ['calculator', 'notepad', 'about'] of ['calculator', 'notepad', 'about']"
+    },
+    {
+     "name": "window stacking",
+     "ok": true,
+     "detail": "z-?index"
+    },
+    {
+     "name": "typeable notepad",
+     "ok": true,
+     "detail": "textarea|contenteditable"
+    },
+    {
+     "name": "os.html >= 8 KB",
+     "ok": true,
+     "detail": "20599 bytes"
+    }
+   ],
+   "artifacts": [
+    "compare-first/dsh/html-desktop-os/os.html"
+   ],
+   "final": "The file `os.html` has been created at `/private/tmp/seymour-compare/first/html-desktop-os/ws/os.html` (585 lines). Here's what's included:\n\n**Desktop**\n- Dark purple gradient wallpaper\n- Three desktop icons: Notepad, Calculator, About (click to open)\n\n**Taskbar** (fixed at bottom, glassmorphism style)\n- Start button with animated start menu\n- Live clock (time + date, updates every second)\n- Activ"
+  },
+  {
+   "harness": "seymour",
+   "task": "code-fix-and-test",
+   "category": "code",
+   "status": "done",
+   "seconds": 88.2,
+   "score": 1.0,
+   "tool_calls": 5,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "4 passed in 0.00s"
+    },
+    {
+     "name": "test_stats.py has ('def test_median_even',)",
+     "ok": true,
+     "detail": "found ['def test_median_even'] of ['def test_median_even']"
+    }
+   ],
+   "artifacts": [
+    "compare-first/seymour/code-fix-and-test/stats.py"
+   ],
+   "final": "The tests now pass. The bugs were:\n\n1.  **`mean` function**: Divided by `len(xs) - 1` instead of `len(xs)`. This caused incorrect averages and also broke the `variance` function (which depends on `mean`).\n2.  **`median` function**: Only handled the odd-length case (returning the middle element). It failed for even-length lists by returning the element at `n // 2` instead of averaging the two middl"
+  },
+  {
+   "harness": "dsh",
+   "task": "code-fix-and-test",
+   "category": "code",
+   "status": "done",
+   "seconds": 45.4,
+   "score": 1.0,
+   "tool_calls": 7,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "4 passed in 0.00s"
+    },
+    {
+     "name": "test_stats.py has ('def test_median_even',)",
+     "ok": true,
+     "detail": "found ['def test_median_even'] of ['def test_median_even']"
+    }
+   ],
+   "artifacts": [
+    "compare-first/dsh/code-fix-and-test/stats.py"
+   ],
+   "final": "All 4 tests pass. Here's what was wrong in **stats.py**:\n\n1. **`mean()` \u2014 off-by-one in denominator** (`len(xs) - 1` \u2192 `len(xs)`): The mean of `[2, 4, 6]` was returning `6.0` (12 / 2) instead of `4.0` (12 / 3). It was dividing by `n-1` (a sample-divisor pattern) instead of `n`.\n\n2. **`median()` \u2014 no averaging for even-length lists**: For `[1, 3, 2, 4]` (sorted: `[1, 2, 3, 4]`), it returned `s[2] ="
+  },
+  {
+   "harness": "seymour",
+   "task": "code-multifile-refactor",
+   "category": "code",
+   "status": "done",
+   "seconds": 56.2,
+   "score": 1.0,
+   "tool_calls": 9,
+   "checks": [
+    {
+     "name": "app/env.py exists",
+     "ok": true,
+     "detail": "app/env.py"
+    },
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "2 passed in 0.01s"
+    },
+    {
+     "name": "config imports env",
+     "ok": true,
+     "detail": "passed when scored against the live workspace during the run (app/config.py was not among the kept artifacts then)"
+    }
+   ],
+   "artifacts": [
+    "compare-first/seymour/code-multifile-refactor/env.py"
+   ],
+   "final": "Refactoring complete. Created `app/env.py` with the canonical `read_env` function. Updated `app/config.py`, `app/db.py`, and `app/main.py` to import from `app.env` instead of defining their own copies. All tests in `test_app.py` pass (2 passed)."
+  },
+  {
+   "harness": "dsh",
+   "task": "code-multifile-refactor",
+   "category": "code",
+   "status": "done",
+   "seconds": 43.4,
+   "score": 1.0,
+   "tool_calls": 11,
+   "checks": [
+    {
+     "name": "app/env.py exists",
+     "ok": true,
+     "detail": "app/env.py"
+    },
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "2 passed in 0.00s"
+    },
+    {
+     "name": "config imports env",
+     "ok": true,
+     "detail": "passed when scored against the live workspace during the run (app/config.py was not among the kept artifacts then)"
+    }
+   ],
+   "artifacts": [
+    "compare-first/dsh/code-multifile-refactor/env.py"
+   ],
+   "final": "Both tests pass. Here's a summary of the refactoring:\n\n1. **Created `app/env.py`** \u2014 the single canonical `read_env(name, default=None)` implementation.\n2. **Updated `app/config.py`** \u2014 removed its local `read_env` + `import os`, replaced with `from app.env import read_env`.\n3. **Updated `app/db.py`** \u2014 same change (removed duplicate, imported from `app.env`).\n4. **Updated `app/main.py`** \u2014 same c"
+  }
+ ]
+}

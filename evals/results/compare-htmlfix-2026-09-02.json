@@ -1,0 +1,126 @@
+{
+ "label": "htmlfix",
+ "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+ "records": [
+  {
+   "harness": "seymour",
+   "task": "html-solar-system",
+   "category": "web",
+   "status": "done",
+   "seconds": 477.9,
+   "score": 1.0,
+   "tool_calls": 4,
+   "checks": [
+    {
+     "name": "solar_system.html exists",
+     "ok": true,
+     "detail": "solar_system.html"
+    },
+    {
+     "name": "solar_system.html is a complete HTML document with script",
+     "ok": true,
+     "detail": "14 tags; script=True"
+    },
+    {
+     "name": "solar_system.html is self-contained",
+     "ok": true,
+     "detail": "0 external references"
+    },
+    {
+     "name": "uses a canvas",
+     "ok": true,
+     "detail": "<canvas"
+    },
+    {
+     "name": "animates with requestAnimationFrame",
+     "ok": true,
+     "detail": "requestAnimationFrame"
+    },
+    {
+     "name": "solar_system.html has ('mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune')",
+     "ok": true,
+     "detail": "found ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'] of ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'n"
+    },
+    {
+     "name": "has a speed slider",
+     "ok": true,
+     "detail": "type\\s*=\\s*[\"\\']range[\"\\']"
+    },
+    {
+     "name": "has pause/play",
+     "ok": true,
+     "detail": "pause|play"
+    },
+    {
+     "name": "solar_system.html >= 6 KB",
+     "ok": true,
+     "detail": "7438 bytes"
+    }
+   ],
+   "artifacts": [
+    "compare-htmlfix/seymour/html-solar-system/solar_system.html"
+   ],
+   "final": "Created `solar_system.html` \u2014 a self-contained HTML file featuring a canvas-based solar system animation with the sun, all eight planets (distinct colors, sizes, and orbital speeds), labels, Saturn's ring, a twinkling starfield background, a speed slider, and a pause/play button, all driven by `requestAnimationFrame`."
+  },
+  {
+   "harness": "seymour",
+   "task": "html-desktop-os",
+   "category": "web",
+   "status": "done",
+   "seconds": 528.7,
+   "score": 1.0,
+   "tool_calls": 5,
+   "checks": [
+    {
+     "name": "os.html exists",
+     "ok": true,
+     "detail": "os.html"
+    },
+    {
+     "name": "os.html is a complete HTML document with script",
+     "ok": true,
+     "detail": "29 tags; script=True"
+    },
+    {
+     "name": "os.html is self-contained",
+     "ok": true,
+     "detail": "0 external references"
+    },
+    {
+     "name": "draggable windows",
+     "ok": true,
+     "detail": "mousedown|pointerdown|dragstart"
+    },
+    {
+     "name": "live clock",
+     "ok": true,
+     "detail": "setInterval|requestAnimationFrame"
+    },
+    {
+     "name": "os.html has ('calculator', 'notepad', 'about')",
+     "ok": true,
+     "detail": "found ['calculator', 'notepad', 'about'] of ['calculator', 'notepad', 'about']"
+    },
+    {
+     "name": "window stacking",
+     "ok": true,
+     "detail": "z-?index"
+    },
+    {
+     "name": "typeable notepad",
+     "ok": true,
+     "detail": "textarea|contenteditable"
+    },
+    {
+     "name": "os.html >= 8 KB",
+     "ok": true,
+     "detail": "18874 bytes"
+    }
+   ],
+   "artifacts": [
+    "compare-htmlfix/seymour/html-desktop-os/os.html"
+   ],
+   "final": "Created `os.html` in the workspace. It is a single, self-contained HTML file simulating a small desktop OS. Features include:\n- A modern dark-themed wallpaper and desktop layout\n- A taskbar with a live clock and active window indicators\n- A functional Start Menu\n- Desktop icons for launching apps\n- Three working apps: **Notepad** (text input), **Calculator** (full arithmetic logic), and **About** "
+  }
+ ]
+}

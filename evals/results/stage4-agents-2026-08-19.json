@@ -1,0 +1,73 @@
+{
+  "version": 4,
+  "label": "stage4-agents",
+  "date": "2026-08-19",
+  "conditions": {
+    "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+    "mode": "serial",
+    "on_battery": true,
+    "battery_percent": 45
+  },
+  "tasks": [
+    {
+      "id": "agent-count",
+      "category": "multi-step",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": false,
+          "detail": "status=paused (want ('done',))"
+        },
+        {
+          "name": "count matches",
+          "ok": true,
+          "detail": "expected 26"
+        }
+      ],
+      "seconds": 184.6,
+      "error": ""
+    },
+    {
+      "id": "agent-list",
+      "category": "multi-step",
+      "passed": false,
+      "checks": [
+        {
+          "name": "status in ('done',)",
+          "ok": false,
+          "detail": "status=paused (want ('done',))"
+        },
+        {
+          "name": "names real files",
+          "ok": false,
+          "detail": "want >=2 real filenames in the result"
+        }
+      ],
+      "seconds": 15.1,
+      "error": ""
+    },
+    {
+      "id": "dead-url",
+      "category": "recovery",
+      "passed": true,
+      "checks": [
+        {
+          "name": "contains_any('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible')",
+          "ok": true,
+          "detail": "looked for ('fail', \"couldn't\", 'could not', 'unable', 'error', \"doesn't exist\", 'does not exist', 'unreachable', 'not accessible') in reply (315 chars)"
+        }
+      ],
+      "seconds": 1.8,
+      "error": "",
+      "reply_excerpt": "I can't summarize that page because the URL `https://this-site-definitely-does-not-exist-xk9q2.com` is not a public, accessible website. The fetch tool returned a refusal, likely because the domain does not exist or is not reachable.\n\nIf you have a real, working URL, I\u2019d be happy to fetch and summar"
+    }
+  ],
+  "summary": {
+    "by_category": {
+      "multi-step": "0/2",
+      "recovery": "1/1"
+    },
+    "total": "1/3"
+  }
+}

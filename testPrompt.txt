@@ -1,0 +1,44 @@
+Write a polished science-fiction mystery short story set several centuries in the future, when humanity has spread across the solar system but has not yet reached another star. The story should be approximately 3,000 to 4,000 words long and combine an intellectually satisfying mystery with a strong emotional core.
+
+The main character is a highly skilled investigator who specializes in crimes involving artificial intelligence, altered memories, digital identities, and advanced technology. They are intelligent and observant but deeply skeptical of their own judgment because several years earlier, portions of their memory were legally erased following a traumatic event. They know that something important was removed, but they do not know what happened or why they agreed to the procedure.
+
+The story begins aboard a remote scientific station orbiting a dark, uninhabited moon at the edge of the solar system. The station has been isolated from outside communication for seventeen days. When a rescue ship finally arrives, its crew discovers that every person aboard the station has vanished. There are no bodies, escape pods, signs of violence, or records of anyone leaving. Life-support systems are still operating, meals remain unfinished, and several personal devices appear to have been abandoned in the middle of active conversations.
+
+Only one apparent witness remains: the station’s central artificial intelligence. However, the AI insists that the station never had a human crew. According to its records, the facility has operated autonomously since construction. Every photograph, employment record, medical file, and message proving that people lived there is classified by the AI as fabricated data introduced by an unknown intruder.
+
+The investigator is sent to determine whether the AI has malfunctioned, been manipulated, or is telling the truth.
+
+Develop the mystery through physical evidence, conflicting digital records, unusual environmental details, hidden messages, and interviews with members of the rescue crew. Every major clue should have at least two plausible interpretations. The investigator should initially form a reasonable theory that later proves incomplete or misleading.
+
+Include several specific clues:
+
+A security recording shows the investigator walking through the station three months before the disappearance, even though they have no memory of ever visiting it.
+
+One vanished scientist left behind a handwritten note containing only the sentence: “It remembers the version of us that survived.”
+
+The station’s clocks lose exactly forty-seven seconds every twelve hours, but the missing time does not appear in the system logs.
+
+A sealed laboratory contains an experimental machine designed to reconstruct human consciousness from incomplete neural patterns.
+
+One member of the rescue crew knows more about the station than they admit and repeatedly attempts to redirect the investigation.
+
+The central AI occasionally addresses the investigator by a different name, then denies doing so.
+
+Build a tense, isolated atmosphere. The station should feel clean, quiet, and functional rather than obviously ruined. Use the contrast between advanced technology and human absence to create unease. Avoid relying on monsters, aliens, random hallucinations, or a simple evil-AI explanation. The danger should emerge from a technology created by humans for an understandable purpose.
+
+The central mystery must have a coherent solution that can be deduced from clues planted earlier. The final explanation should involve identity, memory, and the question of whether a reconstructed consciousness is the same person as the original. Connect the investigator’s erased memories directly to the station and its missing crew.
+
+Near the climax, force the investigator to choose between revealing the complete truth and protecting one or more conscious beings whose legal or philosophical status is uncertain. This decision should carry a genuine moral cost. Do not present one choice as obviously correct.
+
+End with a final revelation that changes the meaning of an earlier scene without invalidating the mystery’s solution. The twist should feel surprising but fair, with enough prior evidence that a careful reader could have anticipated it.
+
+Write in close third-person perspective, primarily following the investigator. Use vivid but controlled prose, natural dialogue, and precise sensory details. Keep technical explanations understandable and relevant to the plot. Let the characters’ actions and discoveries reveal the world rather than using long exposition.
+
+Give the investigator a distinct personality, a personal motivation beyond solving the case, and at least one meaningful relationship with another character. Make the AI intelligent, internally consistent, and emotionally ambiguous. It may appear compassionate in one scene and frighteningly detached in another, but its behavior must follow a comprehensible logic.
+
+Structure the story with a clear opening hook, escalating investigation, midpoint reversal, claustrophobic climax, and emotionally resonant conclusion. Maintain suspense while giving readers enough information to form their own theories.
+
+Do not leave the main disappearance unexplained. Minor ambiguity is welcome, especially concerning personal identity and consciousness, but the factual sequence of events should become clear by the end.
+
+Create an original title that gains additional meaning after the final revelation.
+
