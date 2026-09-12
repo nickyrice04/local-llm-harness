@@ -65,7 +65,10 @@ export function show(container: HTMLElement): ViewHandle {
         summary = `round ${d.round} · ${d.seconds}s · `
           + `${d.visible_chars} visible chars`
           + (d.withheld ? " · withheld (tool call)" : "")
-          + (stats.decode_tps ? ` · ${stats.decode_tps} tok/s` : "");
+          + (stats.decode_tps ? ` · ${stats.decode_tps} tok/s` : "")
+          // The prompt cache, measured: what the server reused vs prefilled.
+          + (stats.cache_hit !== undefined && stats.cache_hit !== null
+              ? ` · cache ${Math.round(stats.cache_hit * 100)}% (${stats.cached_tokens} reused, ${stats.prompt_tokens} prefilled)` : "");
         break;
       }
       case "tool_call":
@@ -110,7 +113,9 @@ export function show(container: HTMLElement): ViewHandle {
           + (c.peak_tokens ? ` · peak ~${c.peak_tokens} tokens` : "")
           + (c.spills ? ` · ${c.spills} spill(s)` : "")
           + (c.prunes ? ` · ${c.prunes} pruned` : "")
-          + (c.compactions ? ` · ${c.compactions} compaction(s)` : "");
+          + (c.compactions ? ` · ${c.compactions} compaction(s)` : "")
+          + (d.cache_hit_mean !== undefined && d.cache_hit_mean !== null
+              ? ` · cache hit mean ${Math.round(d.cache_hit_mean * 100)}% (min ${Math.round(d.cache_hit_min * 100)}%)` : "");
         break;
       }
       default:

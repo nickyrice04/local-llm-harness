@@ -365,6 +365,7 @@ async def stream_chat_run(
     repair_rounds = 0                  # bounded: pages that still fail their check
     pages: dict = {}                   # path → last auto-check (files this run wrote)
     repeat_state: dict = {}            # consecutive identical calls (nudges)
+    cache_hits: list[float] = []       # per-round prompt-cache hit ratio (llama.cpp reports it)
     request = None
     status = "done"
     try:
@@ -473,6 +474,12 @@ async def stream_chat_run(
                       visible_chars=len(visible) - round_start,
                       withheld=tool_round,
                       stats=dict(request.stats) if request.stats else {})
+            # The cache-hit ledger: every round's ratio, so the run's end
+            # can report the mean and the trace can show a miss where it
+            # happened (a compaction rewrites the prefix — one miss, expected;
+            # a miss on every round is the bug the brief suspects).
+            if request.stats.get("cache_hit") is not None:
+                cache_hits.append(float(request.stats["cache_hit"]))
 
             if sniffing:
                 tool_round = _looks_like_tool_call(buffer)
@@ -720,6 +727,9 @@ async def stream_chat_run(
             "tps_source": "measured",
         }
         stats["elapsed_s"] = round(loop.time() - started, 2)
+        if cache_hits:
+            stats["cache_hit_mean"] = round(sum(cache_hits) / len(cache_hits), 3)
+            stats["cache_hit_rounds"] = len(cache_hits)
         if first_token_at is not None:
             stats["ttft_s"] = round(first_token_at - started, 2)
         if tool_calls:
@@ -793,7 +803,11 @@ async def stream_chat_run(
                    seconds=round(loop.time() - started, 2),
                    # The economy's tally: how many spills, prunes and
                    # compactions the run needed, and its peak prompt size.
-                   context=economy.stats)
+                   context=economy.stats,
+                   # The measured prompt-cache hit rate across the run's
+                   # rounds (None when the engine does not report cache_n).
+                   cache_hit_mean=round(sum(cache_hits) / len(cache_hits), 3) if cache_hits else None,
+                   cache_hit_min=round(min(cache_hits), 3) if cache_hits else None)
         if visible:
             # Quiet Tier-3 follow-ups: a real title for new
             # conversations, and memory extraction.

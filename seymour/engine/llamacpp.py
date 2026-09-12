@@ -497,6 +497,16 @@ class LlamaCppEngine(EngineAdapter):
             "decode_tps": timings.get("predicted_per_second"),
             "tps_source": "engine",       # the engine's own timers said so
         })
+        # The prompt cache, MEASURED per request (2026-09-11, the brief's
+        # 1.4.2): `prompt_n` is what the server actually prefilled this
+        # request and `cache_n` what it reused from the slot's cache. Their
+        # ratio is the cache-hit rate the whole prompt-ordering discipline
+        # exists for; a silent miss looks exactly like a 3-4x wall-clock gap.
+        if timings.get("cache_n") is not None:
+            cached = int(timings.get("cache_n") or 0)
+            fresh = int(timings.get("prompt_n") or 0)
+            req.stats["cached_tokens"] = cached
+            req.stats["cache_hit"] = round(cached / (cached + fresh), 3) if (cached + fresh) else None
         # MTP's own counters, when the build reports them: how many tokens
         # the draft head PROPOSED and how many the full model ACCEPTED.
         # These are cumulative server counters, so callers compare deltas.

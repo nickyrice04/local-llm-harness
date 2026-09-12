@@ -388,6 +388,13 @@ export function show(container: HTMLElement): ViewHandle {
         + "brain: the kind of weights picks the engine (llama.cpp or MLX), and "
         + "the handshake re-measures every capability on swap — nothing is "
         + "assumed from a model's name."),
+      // The loop-model rule, measured on this machine (NOTES.md, 2026-09-11):
+      // a 3B-active MoE decodes 3-4× faster than a dense 27B, and a
+      // 300-line file written token by token is the whole wall-clock gap.
+      el("p.muted", {}, "Default for the agent loop: the MoE (Qwen3.6-35B-A3B on llama.cpp, "
+        + "57–91 tok/s measured) — every tool round and every file write is decode-bound, and a "
+        + "dense 27B at 17–32 tok/s makes the same task 3–4× slower. Keep the dense vision "
+        + "model for read_image and page screenshots; loading both at once is on the roadmap."),
       // The engine status/error line (load progress, refusals, failures).
       notice ? el("p", { className: noticeKind === "error" ? "notice error" : "notice" },
                   notice) : null,
