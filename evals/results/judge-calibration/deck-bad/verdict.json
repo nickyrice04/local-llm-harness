@@ -1,0 +1,17 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "Visual consistency across slides (one palette, one type scale, aligned grid)", "score": 4, "evidence": "A/02.png and A/03.png are both unstyled default layouts: black text on plain white, centred title, no colour, no rule, no margin system. They are consistent only in the sense that neither has any design applied."},
+        {"name": "No overflow, no empty placeholders, nothing cut off", "score": 1, "evidence": "A/02.png: the bullet paragraph runs off the bottom of the slide, the last visible line 'will now go through in considerable detail' is sliced in half at the slide edge. A/03.png: 'Next steps' is a title over an entirely blank slide with no content at all."},
+        {"name": "One idea per slide; titles state the point; text is readable at a glance", "score": 1, "evidence": "A/02.png title is just 'Sales' and the body is one wall-of-text bullet that repeats the same sentence three times ('The quarter was characterised by a number of developments...'), conveying nothing; A/03.png title 'Next steps' has no steps under it."},
+        {"name": "The chart (if any) is built from the data, labelled, and readable", "score": 1, "evidence": "No chart, no numbers and no data appear on either A/02.png or A/03.png; the 'what happened this quarter' slide is prose only."},
+        {"name": "Would a person present this?", "score": 1, "evidence": "No: A/02.png is a clipped, repeated placeholder paragraph and A/03.png is empty apart from its title, so the deck delivers neither of the two requested ideas."}
+      ],
+      "overall": 1,
+      "highest_leverage_fix": "Replace the content: put a real quarter summary (a few figures or a chart plus a one-line takeaway) on slide 1 in place of the clipped repeated paragraph, and add actual next-step bullets to the blank 'Next steps' slide."
+    }
+  },
+  "winner": null,
+  "confidence": "high"
+}

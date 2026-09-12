@@ -1,0 +1,17 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "Layout and visual polish at desktop width (spacing, alignment, colour)", "score": 5, "evidence": "A/01.png: a coherent dark navy palette with a teal button and three evenly gapped rounded cards, but every card is stretched to the full viewport height with only two lines of content at the top, so ~80% of each card is empty; the Notes textarea is an unstyled default white box with a monospace font (visible in A/03.png) that clashes with the dark theme, and the counter value '0' is the same small size as body text instead of a prominent figure."},
+        {"name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)", "score": 8, "evidence": "A/04.png (1024 wide) keeps the three cards side by side with no clipping; A/05.png (375 wide) stacks the cards vertically, the header keeps 'Dashboard' and the clock on one line, and the textarea shrinks to the card width with no horizontal overflow. The tall empty cards persist on both."},
+        {"name": "The interactions asked for visibly work (compare the after-interaction images)", "score": 9, "evidence": "Counter reads '0' in A/01.png and '1' in A/02.png after the button press; A/03.png shows 'hello' typed into the Notes textarea; the header clock advances from 10:08:18 PM (A/01.png) to 10:08:23 PM (A/02.png), and shows different times on the other viewports (A/04.png 10:08:19, A/05.png 10:08:21), so the live clock ticks."},
+        {"name": "No console errors; nothing visibly broken", "score": 9, "evidence": "The console log in packet.json is empty and nothing in A/01.png-A/05.png is clipped, missing, or mis-rendered; the only visual defect is the default-styled textarea in A/03.png."},
+        {"name": "Would a person use this?", "score": 6, "evidence": "All four requested parts are present and work (A/01.png-A/03.png), so it is usable, but the full-height empty cards and the plain white textarea in A/01.png make it look like an unfinished scaffold rather than a finished dashboard."}
+      ],
+      "overall": 6,
+      "highest_leverage_fix": "Stop stretching the cards to the viewport height (let them size to content or align-items: start) and style the textarea and counter figure to match the dark theme, so the desktop view in A/01.png stops being mostly empty space."
+    }
+  },
+  "winner": null,
+  "confidence": "high"
+}

@@ -1,0 +1,28 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "Layout and visual polish at desktop width (spacing, alignment, colour)", "score": 6, "evidence": "A/01.png: a clean radial navy wallpaper, a coral 'Start' button and a clock on a dark taskbar; A/02.png's start menu is a plain white three-item list with no icons, and A/06.png shows the calculator window sized too small for its contents so the pink '=' button is cut to a sliver at the bottom edge."},
+        {"name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)", "score": 8, "evidence": "A/15.png (1024 wide) and A/16.png (375 wide) show the wallpaper, Start button and clock laid out correctly with nothing overflowing, though only the empty desktop is exercised at those sizes."},
+        {"name": "The interactions asked for visibly work (compare the after-interaction images)", "score": 7, "evidence": "Start menu appears in A/02.png and toggles again in A/05.png; Notepad opens (A/03.png) and shows 'hello from the eval' (A/04.png); calculator display goes '8' (A/07.png), '8/' (A/08.png), '8/2' (A/09.png), '4' (A/10.png); About opens on top of the stack in A/14.png. Drag and bring-to-front could not be verified: the interaction log shows the harness's own drag step failed on argument parsing ('invalid literal for int()') and the '.window' click timed out, so those two behaviours are unproven, not disproven."},
+        {"name": "No console errors; nothing visibly broken", "score": 5, "evidence": "Console is empty, but the calculator is visibly broken in layout: A/06.png-A/09.png clip the '=' button at the window's bottom edge, and after '=' is pressed (A/10.png-A/13.png) the panel has scrolled so the display strip is cut off at the top with only the lower half of the '4' visible."},
+        {"name": "Would a person use this?", "score": 5, "evidence": "The apps function (A/04.png, A/10.png), but the calculator window in A/10.png with its half-hidden display and previously hidden '=' key, plus the bare white menu in A/02.png, make it feel unfinished rather than a 'clean and modern' desktop."}
+      ],
+      "overall": 6,
+      "highest_leverage_fix": "Size the calculator window to fit its content (or let the window grow to its content height) so the '=' button and the display are both fully visible at once, as the clipping in A/06.png and A/10.png is the only visibly broken thing."
+    },
+    "B": {
+      "criteria": [
+        {"name": "Layout and visual polish at desktop width (spacing, alignment, colour)", "score": 8, "evidence": "B/01.png: a soft blue-purple gradient wallpaper and a slim dark taskbar with a grid start icon and 'time + date' clock; B/02.png's start menu has app icons on coloured tiles; windows (B/03.png, B/06.png, B/14.png) share a dark titlebar with minimise/close glyphs and a centred About card. Minor flaws: the start button is an unlabelled icon, and the calculator grid in B/06.png leaves two empty cells beside '0' and '='."},
+        {"name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)", "score": 8, "evidence": "B/15.png (1024 wide) and B/16.png (375 wide) keep the wallpaper, start icon and full date-time clock on one line with no overflow; only the empty desktop is shown at those sizes."},
+        {"name": "The interactions asked for visibly work (compare the after-interaction images)", "score": 7, "evidence": "Start menu toggles (B/02.png, B/05.png, B/12.png); Notepad opens (B/03.png) and shows 'hello from the eval' (B/04.png); calculator display reads '0' then '8' (B/07.png), '2' after the divisor (B/09.png) and '4' after '=' (B/10.png); About opens on top of the stack in B/13.png; the clock advances from 11:40 to 11:41 between B/13.png and B/14.png. Drag and bring-to-front are unverified for the same harness reasons as A (drag argument parse error, '.window' click timeout in the log)."},
+        {"name": "No console errors; nothing visibly broken", "score": 8, "evidence": "Console is empty and nothing is clipped in any of B/01.png-B/16.png; every calculator key including '=' is fully visible in B/06.png. The two empty grid cells in the calculator's last row (B/06.png) are a layout blemish, not a defect."},
+        {"name": "Would a person use this?", "score": 7, "evidence": "B/06.png, B/13.png and B/02.png look like a coherent modern desktop with working notepad and calculator; it lacks taskbar entries for open windows and a labelled start button, but nothing would embarrass the author."}
+      ],
+      "overall": 7,
+      "highest_leverage_fix": "Give the taskbar a labelled start button and buttons for open/minimised windows (B/01.png has only a bare icon and a clock), and fill the calculator's last row (B/06.png) so the keypad grid is complete."
+    }
+  },
+  "winner": "B",
+  "confidence": "high"
+}

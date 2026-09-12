@@ -84,6 +84,7 @@ async def run_interactions(html_path: Path, steps: list[str], shots_dir: Path | 
         from playwright.async_api import async_playwright
     except ImportError:
         return None
+    html_path = Path(html_path).resolve()          # as_uri() needs an absolute path
     report = InteractionReport(ok=True)
     try:
         async with async_playwright() as pw:
@@ -94,14 +95,22 @@ async def run_interactions(html_path: Path, steps: list[str], shots_dir: Path | 
             await page.goto(url or html_path.as_uri(), wait_until="load")
             await page.wait_for_timeout(settle_ms)
             before = await _dom_hash(page)
+            last_changed: bool | None = None       # what the previous ACTION did to the DOM
             for step in steps:
+                if step.strip() == "expect changed":
+                    # Asserts the PREVIOUS action's effect (measured 2026-09-11:
+                    # comparing around the assertion itself always said "nothing
+                    # changed", failing both harnesses' pages on a working drag).
+                    result = StepResult(step, bool(last_changed), "" if last_changed else "nothing in the DOM changed after the previous action")
+                    report.steps.append(result)
+                    if not result.ok:
+                        report.ok = False
+                    continue
                 result = await _run_step(page, step, shots_dir, report)
                 after = await _dom_hash(page)
                 if step.split(" ", 1)[0] in ("click", "dblclick", "type", "press", "drag"):
                     result.changed = after != before
-                elif step.strip() == "expect changed":
-                    result.ok = after != before
-                    result.note = "" if result.ok else "nothing in the DOM changed"
+                    last_changed = result.changed
                 before = after
                 report.steps.append(result)
                 if not result.ok:
@@ -113,23 +122,62 @@ async def run_interactions(html_path: Path, steps: list[str], shots_dir: Path | 
     return report
 
 
+async def _target(page, selector: str):
+    """The match a PERSON would act on. Hidden matches are skipped (a
+    desktop page keeps closed windows in the DOM); among visible matches
+    the TOPMOST wins — highest computed z-index, later in DOM order on a
+    tie — because that is the one the pointer would actually reach (an
+    overlapped window makes Playwright refuse the click and blames the
+    page; measured 2026-09-11 on both harnesses' desktop pages). Prefix
+    `bottommost:` picks the lowest instead — the way to test bring-to-
+    front: click the window underneath and expect the DOM to change."""
+    want_bottom = selector.startswith("bottommost:")
+    if want_bottom:
+        selector = selector[len("bottommost:"):].strip()
+    elif selector.startswith("topmost:"):
+        selector = selector[len("topmost:"):].strip()
+    visible = page.locator(f"{selector} >> visible=true")
+    count = await visible.count()
+    if count == 0:
+        return page.locator(selector).first
+    if count == 1:
+        return visible.first
+    # The EFFECTIVE z-index of every visible match: its own, or the nearest
+    # ancestor's that has one (a titlebar inside a window stacks with the
+    # window — measured: both titlebars read z 0 while their windows were
+    # 11 and 12). auto everywhere → 0.
+    zs = await visible.evaluate_all(
+        "els => els.map(e => { let n = e; while (n && n !== document.body) { const z = parseInt(getComputedStyle(n).zIndex);"
+        " if (!isNaN(z)) return z; n = n.parentElement; } return 0; })")
+    order = sorted(range(count), key=lambda i: (zs[i], i))
+    return visible.nth(order[0] if want_bottom else order[-1])
+
+
 async def _run_step(page, step: str, shots_dir: Path | None, report: InteractionReport) -> StepResult:
     parts = step.split(" ", 2)
     verb = parts[0].lower()
     try:
         if verb == "click" and len(parts) >= 2:
-            await page.locator(" ".join(parts[1:])).first.click(timeout=STEP_TIMEOUT_MS)
+            selector = " ".join(parts[1:])
+            # A window underneath others is partly covered; a person clicks
+            # its visible sliver. Playwright would wait for a clear hit —
+            # force the click for bottommost: targets.
+            await (await _target(page, selector)).click(timeout=STEP_TIMEOUT_MS, force=selector.startswith("bottommost:"))
         elif verb == "dblclick" and len(parts) >= 2:
-            await page.locator(" ".join(parts[1:])).first.dblclick(timeout=STEP_TIMEOUT_MS)
+            await (await _target(page, " ".join(parts[1:]))).dblclick(timeout=STEP_TIMEOUT_MS)
         elif verb == "type" and len(parts) >= 3:
-            target = page.locator(parts[1]).first
+            target = await _target(page, parts[1])
             await target.click(timeout=STEP_TIMEOUT_MS)
             await target.type(parts[2], timeout=STEP_TIMEOUT_MS)
         elif verb == "press" and len(parts) >= 2:
             await page.keyboard.press(parts[1])
-        elif verb == "drag" and len(parts) == 3:
-            dx, dy = (int(v) for v in parts[2].split())
-            box = await page.locator(parts[1]).first.bounding_box(timeout=STEP_TIMEOUT_MS)
+        elif verb == "drag" and len(step.split()) >= 4:
+            # `drag <selector…> <dx> <dy>`: the selector may contain spaces
+            # (".window .titlebar"), so the offsets are the LAST two tokens.
+            tokens = step.split()
+            dx, dy = int(tokens[-2]), int(tokens[-1])
+            selector = " ".join(tokens[1:-2])
+            box = await (await _target(page, selector)).bounding_box(timeout=STEP_TIMEOUT_MS)
             if box is None:
                 return StepResult(step, False, "element has no box (not rendered?)")
             x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
@@ -184,6 +232,7 @@ async def screenshot_set(html_path: Path, outdir: Path, steps: list[str] | None 
     except ImportError:
         return {"images": [], "console": "", "interaction": None, "error": "playwright not installed"}
     outdir.mkdir(parents=True, exist_ok=True)
+    html_path = Path(html_path).resolve()
     images: list[str] = []
     console: list[str] = []
     async with async_playwright() as pw:

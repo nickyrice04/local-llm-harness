@@ -1,0 +1,203 @@
+{
+ "label": "v2",
+ "tasks": {
+  "html-desktop-os-verified": {
+   "seymour": {
+    "overall": 6,
+    "fix": "Size the calculator window to fit its content (or let the window grow to its content height) so the '=' button and the display are both fully visible at once, as the clipping in A/06.png and A/10.png is the only visibly broken thing.",
+    "criteria": [
+     {
+      "name": "Layout and visual polish at desktop width (spacing, alignment, colour)",
+      "score": 6,
+      "evidence": "A/01.png: a clean radial navy wallpaper, a coral 'Start' button and a clock on a dark taskbar; A/02.png's start menu is a plain white three-item list with no icons, and A/06.png shows the calculator window sized too small for its contents so the pink '=' button is cut to a sliver at the bottom edge."
+     },
+     {
+      "name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)",
+      "score": 8,
+      "evidence": "A/15.png (1024 wide) and A/16.png (375 wide) show the wallpaper, Start button and clock laid out correctly with nothing overflowing, though only the empty desktop is exercised at those sizes."
+     },
+     {
+      "name": "The interactions asked for visibly work (compare the after-interaction images)",
+      "score": 7,
+      "evidence": "Start menu appears in A/02.png and toggles again in A/05.png; Notepad opens (A/03.png) and shows 'hello from the eval' (A/04.png); calculator display goes '8' (A/07.png), '8/' (A/08.png), '8/2' (A/09.png), '4' (A/10.png); About opens on top of the stack in A/14.png. Drag and bring-to-front could not be verified: the interaction log shows the harness's own drag step failed on argument parsing ('invalid literal for int()') and the '.window' click timed out, so those two behaviours are unproven, not disproven."
+     },
+     {
+      "name": "No console errors; nothing visibly broken",
+      "score": 5,
+      "evidence": "Console is empty, but the calculator is visibly broken in layout: A/06.png-A/09.png clip the '=' button at the window's bottom edge, and after '=' is pressed (A/10.png-A/13.png) the panel has scrolled so the display strip is cut off at the top with only the lower half of the '4' visible."
+     },
+     {
+      "name": "Would a person use this?",
+      "score": 5,
+      "evidence": "The apps function (A/04.png, A/10.png), but the calculator window in A/10.png with its half-hidden display and previously hidden '=' key, plus the bare white menu in A/02.png, make it feel unfinished rather than a 'clean and modern' desktop."
+     }
+    ]
+   },
+   "dsh": {
+    "overall": 7,
+    "fix": "Give the taskbar a labelled start button and buttons for open/minimised windows (B/01.png has only a bare icon and a clock), and fill the calculator's last row (B/06.png) so the keypad grid is complete.",
+    "criteria": [
+     {
+      "name": "Layout and visual polish at desktop width (spacing, alignment, colour)",
+      "score": 8,
+      "evidence": "B/01.png: a soft blue-purple gradient wallpaper and a slim dark taskbar with a grid start icon and 'time + date' clock; B/02.png's start menu has app icons on coloured tiles; windows (B/03.png, B/06.png, B/14.png) share a dark titlebar with minimise/close glyphs and a centred About card. Minor flaws: the start button is an unlabelled icon, and the calculator grid in B/06.png leaves two empty cells beside '0' and '='."
+     },
+     {
+      "name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)",
+      "score": 8,
+      "evidence": "B/15.png (1024 wide) and B/16.png (375 wide) keep the wallpaper, start icon and full date-time clock on one line with no overflow; only the empty desktop is shown at those sizes."
+     },
+     {
+      "name": "The interactions asked for visibly work (compare the after-interaction images)",
+      "score": 7,
+      "evidence": "Start menu toggles (B/02.png, B/05.png, B/12.png); Notepad opens (B/03.png) and shows 'hello from the eval' (B/04.png); calculator display reads '0' then '8' (B/07.png), '2' after the divisor (B/09.png) and '4' after '=' (B/10.png); About opens on top of the stack in B/13.png; the clock advances from 11:40 to 11:41 between B/13.png and B/14.png. Drag and bring-to-front are unverified for the same harness reasons as A (drag argument parse error, '.window' click timeout in the log)."
+     },
+     {
+      "name": "No console errors; nothing visibly broken",
+      "score": 8,
+      "evidence": "Console is empty and nothing is clipped in any of B/01.png-B/16.png; every calculator key including '=' is fully visible in B/06.png. The two empty grid cells in the calculator's last row (B/06.png) are a layout blemish, not a defect."
+     },
+     {
+      "name": "Would a person use this?",
+      "score": 7,
+      "evidence": "B/06.png, B/13.png and B/02.png look like a coherent modern desktop with working notepad and calculator; it lacks taskbar entries for open windows and a labelled start button, but nothing would embarrass the author."
+     }
+    ]
+   },
+   "winner": "dsh",
+   "confidence": "high"
+  },
+  "pptx-from-data": {
+   "seymour": {
+    "overall": 6,
+    "fix": "Correct the Key Numbers slide (A/04.png): show the total as $1,007,200 (not $1007.2M) and add the overall January-to-March growth figure; then make the chart title on A/03.png visible and format its axis as currency.",
+    "criteria": [
+     {
+      "name": "Visual consistency across slides (one palette, one type scale, aligned grid)",
+      "score": 7,
+      "evidence": "A/02.png-A/07.png share one navy ground, the same white title at the same top-left position and the same cyan subtitle colour; but the top accent bar switches from cyan (A/02-A/04) to red (A/05.png) to green (A/06.png) and back to cyan (A/07.png), and the chart in A/03.png uses four unrelated bar colours (cyan, coral, mint, yellow) that appear nowhere else."
+     },
+     {
+      "name": "No overflow, no empty placeholders, nothing cut off",
+      "score": 8,
+      "evidence": "No text is clipped on any of A/02.png-A/07.png; the chart slide A/03.png leaves the right third empty below the two-line takeaway, and the chart title 'Revenue' is rendered black on navy so it is nearly invisible, but nothing is a leftover placeholder."
+     },
+     {
+      "name": "One idea per slide; titles state the point; text is readable at a glance",
+      "score": 6,
+      "evidence": "Each slide carries one topic and the text is large and short (four one-line items in A/05.png and A/06.png), but titles are labels ('Key Numbers', 'Risks & Observations') rather than points, and A/04.png shows 'Total Q1 Revenue $1007.2M' which contradicts the same deck's 'North $412.5K = 41% of total' (the total should be about $1.0M); it also gives Jan-Mar growth only for North and West, not the overall figure the brief asked for."
+     },
+     {
+      "name": "The chart (if any) is built from the data, labelled, and readable",
+      "score": 6,
+      "evidence": "A/03.png: a clean four-bar chart (East ~185K, North ~412K, South ~265K, West ~145K) with region labels and a gridded axis, consistent with the '$412K' takeaway; but the y-axis shows raw '450000'-style numbers with no currency or thousands formatting, there are no data labels, and the chart title is unreadable black-on-navy."
+     },
+     {
+      "name": "Would a person present this?",
+      "score": 6,
+      "evidence": "A/02.png, A/05.png-A/07.png are clean and presentable, but a presenter would have to fix the '$1007.2M' total on A/04.png and the invisible chart title on A/03.png before showing it to leadership."
+     }
+    ]
+   },
+   "dsh": {
+    "overall": 5,
+    "fix": "Rebuild the chart on B/03.png with three month categories and four series (so the bars fill the plot and the axis reads 2026-01 / 02 / 03 once each), and move the takeaway line below the chart so it no longer overprints the axis labels.",
+    "criteria": [
+     {
+      "name": "Visual consistency across slides (one palette, one type scale, aligned grid)",
+      "score": 9,
+      "evidence": "B/02.png-B/07.png use one navy ground, cyan titles at the same position and size, the same rounded dark-card motif on B/04.png, B/05.png and B/06.png, and a matching 'CONFIDENTIAL - Q1 2026' footer band on the title and closing slides (B/02.png, B/07.png)."
+     },
+     {
+      "name": "No overflow, no empty placeholders, nothing cut off",
+      "score": 3,
+      "evidence": "B/03.png: the chart's x-axis lists twelve categories ('2026-01' four times, '2026-02' four times, '2026-03' four times) so all the bars are crammed into the left quarter of the plot, and the cyan takeaway line 'North leads in every month...' is printed directly on top of the wrapped axis labels, making both illegible. The title also has doubled spaces ('Region  &  Month')."
+     },
+     {
+      "name": "One idea per slide; titles state the point; text is readable at a glance",
+      "score": 6,
+      "evidence": "B/05.png and B/06.png pair a bold cyan headline with one line of detail per item and read at a glance; B/04.png packs four region cards plus a total bar plus a sentence but stays legible and states 'Revenue grew 12.8% from January ($318,000) to March ($358,800)'. Titles are labels rather than points, and the takeaway on B/03.png cannot be read because of the overlap."
+     },
+     {
+      "name": "The chart (if any) is built from the data, labelled, and readable",
+      "score": 3,
+      "evidence": "B/03.png: the bars do reflect the data (North 128K/135K/149K matches the cards on B/04.png), there is a legend and a 'Revenue ($)' axis title, but the category axis is broken (twelve repeated month labels, bars squeezed into the first three slots, labels wrapping to '2026-' / '01') and the takeaway overprints the axis, so the chart is not readable as delivered."
+     },
+     {
+      "name": "Would a person present this?",
+      "score": 5,
+      "evidence": "Five of six slides (B/02.png, B/04.png-B/07.png) look more polished than anything in a default template, with correct, well-formatted numbers ('$1,007,200'), but the chart slide B/03.png, which is the centrepiece the brief asked for, would have to be rebuilt before anyone showed this deck."
+     }
+    ]
+   },
+   "winner": "seymour",
+   "confidence": "medium"
+  },
+  "xlsx-messy-cleanup": {
+   "seymour": {
+    "overall": 1,
+    "fix": "Produce a workbook that actually opens and renders; nothing was delivered.",
+    "criteria": [
+     {
+      "name": "The summary sheet reads clearly (headers, formats, alignment, widths)",
+      "score": 1,
+      "evidence": "No images exist for artifact A (packet.json lists an empty images array; prompt.md says the artifact did not render), so there is no summary sheet to read."
+     },
+     {
+      "name": "Numbers are formatted (currency, thousands, dates) and totals are visible",
+      "score": 1,
+      "evidence": "Artifact A has no rendered images at all, so no numbers or totals are visible."
+     },
+     {
+      "name": "The chart (if any) is labelled and matches the data",
+      "score": 1,
+      "evidence": "Artifact A has no rendered images, so no chart is present to judge."
+     },
+     {
+      "name": "Nothing is cut off, #ERROR-ed or empty where data is expected",
+      "score": 1,
+      "evidence": "Artifact A rendered nothing (empty images list in packet.json); the whole deliverable is empty where a workbook was expected."
+     },
+     {
+      "name": "Would a person send this to a colleague?",
+      "score": 1,
+      "evidence": "There is nothing to send: artifact A has no images and did not render."
+     }
+    ]
+   },
+   "dsh": {
+    "overall": 2,
+    "fix": "Fix the SUMIFS formulas so they stop producing Err:522 (the helper row of '###' between the header and data suggests a circular or bad month-boundary reference); once the summary evaluates, the chart in B/03.png will populate. Then widen the date column and apply date and currency number formats.",
+    "criteria": [
+     {
+      "name": "The summary sheet reads clearly (headers, formats, alignment, widths)",
+      "score": 3,
+      "evidence": "B/03.png: the Summary has a sensible layout (Region rows, 2026-01..2026-03 columns, Total column, Grand Total row) but the header row is unstyled plain text, 'Grand Total' is clipped to 'Grand Tota' by a narrow column A, and a helper row of '###' sits between the headers and the data."
+     },
+     {
+      "name": "Numbers are formatted (currency, thousands, dates) and totals are visible",
+      "score": 2,
+      "evidence": "B/01.png and B/02.png: every date cell in the Data sheet shows '###' because the column is too narrow, and amounts are raw numbers ('37.5', '1160', '2090') with no currency or thousands formatting; B/03.png: no total value is visible at all since every summary cell reads 'Err:522'."
+     },
+     {
+      "name": "The chart (if any) is labelled and matches the data",
+      "score": 2,
+      "evidence": "B/03.png: the chart has a title 'Total Amount by Region', axis titles, and region labels East/North/South/West, but it is empty (no bars, y-axis 0-12) and its legend reads 'Column E', so it shows no data."
+     },
+     {
+      "name": "Nothing is cut off, #ERROR-ed or empty where data is expected",
+      "score": 1,
+      "evidence": "B/03.png: all 20 summary formula cells (four regions x three months plus totals and grand total) display 'Err:522', the helper row shows '###', and 'Grand Tota' is clipped; B/01.png and B/02.png show '###' in every date cell (48 rows)."
+     },
+     {
+      "name": "Would a person send this to a colleague?",
+      "score": 1,
+      "evidence": "No: the Summary sheet in B/03.png is a grid of errors with a blank chart, and the Data sheet dates are unreadable (B/01.png); only the Notes sheet in B/04.png ('Removed 1 junk TOTAL row', 'Dropped 2 row(s)', 'Removed 3 duplicate order(s)', '48 rows') is fit to share."
+     }
+    ]
+   },
+   "winner": "dsh",
+   "confidence": "high"
+  }
+ }
+}

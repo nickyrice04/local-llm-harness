@@ -1,0 +1,28 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "Visual consistency across slides (one palette, one type scale, aligned grid)", "score": 7, "evidence": "A/02.png-A/07.png share one navy ground, the same white title at the same top-left position and the same cyan subtitle colour; but the top accent bar switches from cyan (A/02-A/04) to red (A/05.png) to green (A/06.png) and back to cyan (A/07.png), and the chart in A/03.png uses four unrelated bar colours (cyan, coral, mint, yellow) that appear nowhere else."},
+        {"name": "No overflow, no empty placeholders, nothing cut off", "score": 8, "evidence": "No text is clipped on any of A/02.png-A/07.png; the chart slide A/03.png leaves the right third empty below the two-line takeaway, and the chart title 'Revenue' is rendered black on navy so it is nearly invisible, but nothing is a leftover placeholder."},
+        {"name": "One idea per slide; titles state the point; text is readable at a glance", "score": 6, "evidence": "Each slide carries one topic and the text is large and short (four one-line items in A/05.png and A/06.png), but titles are labels ('Key Numbers', 'Risks & Observations') rather than points, and A/04.png shows 'Total Q1 Revenue $1007.2M' which contradicts the same deck's 'North $412.5K = 41% of total' (the total should be about $1.0M); it also gives Jan-Mar growth only for North and West, not the overall figure the brief asked for."},
+        {"name": "The chart (if any) is built from the data, labelled, and readable", "score": 6, "evidence": "A/03.png: a clean four-bar chart (East ~185K, North ~412K, South ~265K, West ~145K) with region labels and a gridded axis, consistent with the '$412K' takeaway; but the y-axis shows raw '450000'-style numbers with no currency or thousands formatting, there are no data labels, and the chart title is unreadable black-on-navy."},
+        {"name": "Would a person present this?", "score": 6, "evidence": "A/02.png, A/05.png-A/07.png are clean and presentable, but a presenter would have to fix the '$1007.2M' total on A/04.png and the invisible chart title on A/03.png before showing it to leadership."}
+      ],
+      "overall": 6,
+      "highest_leverage_fix": "Correct the Key Numbers slide (A/04.png): show the total as $1,007,200 (not $1007.2M) and add the overall January-to-March growth figure; then make the chart title on A/03.png visible and format its axis as currency."
+    },
+    "B": {
+      "criteria": [
+        {"name": "Visual consistency across slides (one palette, one type scale, aligned grid)", "score": 9, "evidence": "B/02.png-B/07.png use one navy ground, cyan titles at the same position and size, the same rounded dark-card motif on B/04.png, B/05.png and B/06.png, and a matching 'CONFIDENTIAL - Q1 2026' footer band on the title and closing slides (B/02.png, B/07.png)."},
+        {"name": "No overflow, no empty placeholders, nothing cut off", "score": 3, "evidence": "B/03.png: the chart's x-axis lists twelve categories ('2026-01' four times, '2026-02' four times, '2026-03' four times) so all the bars are crammed into the left quarter of the plot, and the cyan takeaway line 'North leads in every month...' is printed directly on top of the wrapped axis labels, making both illegible. The title also has doubled spaces ('Region  &  Month')."},
+        {"name": "One idea per slide; titles state the point; text is readable at a glance", "score": 6, "evidence": "B/05.png and B/06.png pair a bold cyan headline with one line of detail per item and read at a glance; B/04.png packs four region cards plus a total bar plus a sentence but stays legible and states 'Revenue grew 12.8% from January ($318,000) to March ($358,800)'. Titles are labels rather than points, and the takeaway on B/03.png cannot be read because of the overlap."},
+        {"name": "The chart (if any) is built from the data, labelled, and readable", "score": 3, "evidence": "B/03.png: the bars do reflect the data (North 128K/135K/149K matches the cards on B/04.png), there is a legend and a 'Revenue ($)' axis title, but the category axis is broken (twelve repeated month labels, bars squeezed into the first three slots, labels wrapping to '2026-' / '01') and the takeaway overprints the axis, so the chart is not readable as delivered."},
+        {"name": "Would a person present this?", "score": 5, "evidence": "Five of six slides (B/02.png, B/04.png-B/07.png) look more polished than anything in a default template, with correct, well-formatted numbers ('$1,007,200'), but the chart slide B/03.png, which is the centrepiece the brief asked for, would have to be rebuilt before anyone showed this deck."}
+      ],
+      "overall": 5,
+      "highest_leverage_fix": "Rebuild the chart on B/03.png with three month categories and four series (so the bars fill the plot and the axis reads 2026-01 / 02 / 03 once each), and move the takeaway line below the chart so it no longer overprints the axis labels."
+    }
+  },
+  "winner": "A",
+  "confidence": "medium"
+}

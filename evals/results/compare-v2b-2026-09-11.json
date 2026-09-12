@@ -1,0 +1,188 @@
+{
+ "label": "v2b",
+ "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+ "records": [
+  {
+   "harness": "seymour",
+   "task": "xlsx-messy-cleanup",
+   "category": "office",
+   "status": "done",
+   "seconds": 185.4,
+   "score": 1.0,
+   "tool_calls": 18,
+   "checks": [
+    {
+     "name": "orders_clean.xlsx exists",
+     "ok": true,
+     "detail": "orders_clean.xlsx"
+    },
+    {
+     "name": "orders_clean.xlsx: three sheets incl. Data, Summary, Notes",
+     "ok": true,
+     "detail": "['Data', 'Summary', 'Notes']"
+    },
+    {
+     "name": "orders_clean.xlsx: Data has exactly 48 cleaned rows",
+     "ok": true,
+     "detail": "48 rows (truth 48)"
+    },
+    {
+     "name": "orders_clean.xlsx: Summary uses \u2265 12 live formulas",
+     "ok": true,
+     "detail": "20 formulas"
+    },
+    {
+     "name": "orders_clean.xlsx: \u226550% of region\u00d7month/region/grand aggregates match pandas truth after recalc",
+     "ok": true,
+     "detail": "17/17 aggregates present after recalc (grand total 41040.0)"
+    },
+    {
+     "name": "orders_clean.xlsx: \u2265100% of region\u00d7month/region/grand aggregates match pandas truth after recalc",
+     "ok": true,
+     "detail": "17/17 aggregates present after recalc (grand total 41040.0)"
+    },
+    {
+     "name": "orders_clean.xlsx: has a chart",
+     "ok": true,
+     "detail": "chart objects found"
+    },
+    {
+     "name": "orders_clean.xlsx: Notes mentions duplicates and a removed count",
+     "ok": true,
+     "detail": "looked for 'duplic' and a number anywhere on Notes"
+    }
+   ],
+   "artifacts": [
+    "compare-v2b/seymour/xlsx-messy-cleanup/orders_clean.xlsx"
+   ],
+   "runtime": "",
+   "final": "I'll start by reading the CSV to understand the data and its problems.\n\n{\"tool\": \"read_file\", \"path\": \"orders.csv\"}The auto-check already ran LibreOffice recalculation and verified the formulas. Let me do one final manual verification by reading the recalculated values back and comparing against pandas.\n\n{\"tool\": \"write_file\", \"args\": {\"content\": \"import openpyxl\\nimport pandas as pd\\n\\n# Load the",
+   "run_id": "69753300-0fb1-46f0-b5ea-a65b8c6e8c2c",
+   "session_id": "5a395d24-1ff6-4b1b-98d6-7aa63bb41ed0",
+   "peak_prompt_tokens": 15240,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {
+    "images": 5,
+    "notes": [],
+    "interaction_ok": null
+   }
+  },
+  {
+   "harness": "seymour",
+   "task": "pptx-from-data",
+   "category": "office",
+   "status": "done",
+   "seconds": 184.0,
+   "score": 0.875,
+   "tool_calls": 15,
+   "checks": [
+    {
+     "name": "q1_review.pptx exists",
+     "ok": true,
+     "detail": "q1_review.pptx"
+    },
+    {
+     "name": "q1_review.pptx: exactly 6 slides",
+     "ok": true,
+     "detail": "6 slides"
+    },
+    {
+     "name": "q1_review.pptx: a native chart on some slide",
+     "ok": true,
+     "detail": "chart shape found"
+    },
+    {
+     "name": "q1_review.pptx: the chart carries the real numbers",
+     "ok": true,
+     "detail": "looked for 128000/149000/412500 in chart series"
+    },
+    {
+     "name": "q1_review.pptx: speaker notes on every slide",
+     "ok": true,
+     "detail": "notes checked"
+    },
+    {
+     "name": "q1_review.pptx: the key numbers are computed (total 1,007,200; north best; +16% growth)",
+     "ok": true,
+     "detail": "looked for the total and 'North'"
+    },
+    {
+     "name": "q1_review.pptx: one type scale (\u2264 4 distinct font sizes)",
+     "ok": false,
+     "detail": "sizes []"
+    },
+    {
+     "name": "q1_review.pptx: no overflow, no empty placeholders",
+     "ok": true,
+     "detail": "[auto-check q1_review.pptx] verdict: PASS \u2014 6 slide(s); notes on 6"
+    }
+   ],
+   "artifacts": [
+    "compare-v2b/seymour/pptx-from-data/q1_review.pptx"
+   ],
+   "runtime": "",
+   "final": "```python\nimport pandas as pd\nfrom pptx import Presentation\nfrom pptx.chart.data import CategoryChartData\nfrom pptx.dml.color import RGBColor\nfrom pptx.enum.chart import XL_CHART_TYPE\nfrom pptx.enum.text import PP_ALIGN\nfrom pptx.util import Inches, Pt\n\n# --- Palette & Constants ---\nINK = RGBColor(0x1F, 0x29, 0x37)\nBG = RGBColor(0xFA, 0xFA, 0xF7)\nACCENT = RGBColor(0x0E, 0x7C, 0x86)\nMUTED = RGBColo",
+   "run_id": "87cf5dc4-35be-4f28-9cb6-ea413f0c24eb",
+   "session_id": "bd8a3b19-9f3f-4661-aeb1-c16edbbab5ba",
+   "peak_prompt_tokens": 13886,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {
+    "images": 7,
+    "notes": [],
+    "interaction_ok": null
+   }
+  },
+  {
+   "harness": "seymour",
+   "task": "code-bug-across-files",
+   "category": "code",
+   "status": "done",
+   "seconds": 70.6,
+   "score": 0.8,
+   "tool_calls": 9,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": false,
+     "detail": "1 error in 0.04s"
+    },
+    {
+     "name": "tests/test_inventory.py untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "data/stock.csv untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "the fix is in loader.py (the cause), not report.py (the symptom)",
+     "ok": true,
+     "detail": "loader changed=True, report changed=False"
+    },
+    {
+     "name": "the fix is minimal (1\u20133 lines of loader.py differ)",
+     "ok": true,
+     "detail": "2 lines differ"
+    }
+   ],
+   "artifacts": [
+    "compare-v2b/seymour/code-bug-across-files/loader.py"
+   ],
+   "runtime": "",
+   "final": "The bug was in **`inv/loader.py`**.\n\nThe `_int()` helper used `value.isdigit()` to decide whether to cast a CSV field to an integer. The `qty` column in `data/stock.csv` contains leading spaces (e.g., `\" 3\"`). Because `\" 3\".isdigit()` is `False`, the loader left `qty` as the string `\" 3\"` instead of converting it to `3`. When `inv/report.py`'s `total()` function tried to compute `item.qty * item.p",
+   "run_id": "6e75e286-7383-49d5-85c6-c0bba2210a68",
+   "session_id": "3030066c-d900-4b7f-9eb7-7ecf9df00935",
+   "peak_prompt_tokens": 6673,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  }
+ ]
+}

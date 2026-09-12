@@ -1,0 +1,110 @@
+{
+ "label": "calibration",
+ "tasks": {
+  "deck-bad": {
+   "reference": {
+    "overall": 1,
+    "fix": "Replace the content: put a real quarter summary (a few figures or a chart plus a one-line takeaway) on slide 1 in place of the clipped repeated paragraph, and add actual next-step bullets to the blank 'Next steps' slide.",
+    "criteria": [
+     {
+      "name": "Visual consistency across slides (one palette, one type scale, aligned grid)",
+      "score": 4,
+      "evidence": "A/02.png and A/03.png are both unstyled default layouts: black text on plain white, centred title, no colour, no rule, no margin system. They are consistent only in the sense that neither has any design applied."
+     },
+     {
+      "name": "No overflow, no empty placeholders, nothing cut off",
+      "score": 1,
+      "evidence": "A/02.png: the bullet paragraph runs off the bottom of the slide, the last visible line 'will now go through in considerable detail' is sliced in half at the slide edge. A/03.png: 'Next steps' is a title over an entirely blank slide with no content at all."
+     },
+     {
+      "name": "One idea per slide; titles state the point; text is readable at a glance",
+      "score": 1,
+      "evidence": "A/02.png title is just 'Sales' and the body is one wall-of-text bullet that repeats the same sentence three times ('The quarter was characterised by a number of developments...'), conveying nothing; A/03.png title 'Next steps' has no steps under it."
+     },
+     {
+      "name": "The chart (if any) is built from the data, labelled, and readable",
+      "score": 1,
+      "evidence": "No chart, no numbers and no data appear on either A/02.png or A/03.png; the 'what happened this quarter' slide is prose only."
+     },
+     {
+      "name": "Would a person present this?",
+      "score": 1,
+      "evidence": "No: A/02.png is a clipped, repeated placeholder paragraph and A/03.png is empty apart from its title, so the deck delivers neither of the two requested ideas."
+     }
+    ]
+   },
+   "winner": null,
+   "confidence": "high"
+  },
+  "deck-good": {
+   "reference": {
+    "overall": 7,
+    "fix": "Fill the empty space: add a subtitle/date to the title slide, put value labels (and a unit) on the bars, and give the three next steps a line of context each so slide 3 is not two-thirds blank.",
+    "criteria": [
+     {
+      "name": "Visual consistency across slides (one palette, one type scale, aligned grid)",
+      "score": 8,
+      "evidence": "A/02.png and A/03.png share the same off-white ground, navy title at the same left margin and size, and the same teal rule under the title; A/01.png's dark title slide uses the same navy as the body-slide headings. The chart's default steel-blue bars (A/02.png) are the one colour that does not belong to the navy/teal palette."
+     },
+     {
+      "name": "No overflow, no empty placeholders, nothing cut off",
+      "score": 8,
+      "evidence": "Nothing is clipped on any slide: the chart in A/02.png sits fully inside the slide with all axis labels visible, and the bullets in A/03.png end well before the right edge. A/03.png does leave the bottom two-thirds of the slide blank, and A/01.png has only a title with no subtitle or date, which reads as unused space rather than a broken placeholder."
+     },
+     {
+      "name": "One idea per slide; titles state the point; text is readable at a glance",
+      "score": 8,
+      "evidence": "A/02.png title 'North carries the quarter' states the takeaway, backed by two short bullets ('North is 44% of sales', 'Four regions, 3,260 total'); A/03.png has exactly three short next steps under 'Three things to do next'. The third bullet 'Review gizmo pricing' in A/03.png introduces a product never mentioned elsewhere, so it is not self-explanatory to a viewer."
+     },
+     {
+      "name": "The chart (if any) is built from the data, labelled, and readable",
+      "score": 8,
+      "evidence": "A/02.png bar chart shows north ~1420, south ~850, east ~580, west ~410 against a 0-1600 gridded axis with region labels on the x-axis, matching the prompt data; the chart title is just 'Sales' with no units and there are no value labels on the bars, so the exact figures must be read off the gridlines."
+     },
+     {
+      "name": "Would a person present this?",
+      "score": 7,
+      "evidence": "The three slides (A/01.png-A/03.png) are clean, correct and legible, but visibly default: a lone title on a dark slide with no subtitle, a generic 'Sales' chart caption, default-blue bars, and a next-steps slide (A/03.png) that is mostly empty. Presentable with a few minutes of polish."
+     }
+    ]
+   },
+   "winner": null,
+   "confidence": "high"
+  },
+  "page-dashboard": {
+   "reference": {
+    "overall": 6,
+    "fix": "Stop stretching the cards to the viewport height (let them size to content or align-items: start) and style the textarea and counter figure to match the dark theme, so the desktop view in A/01.png stops being mostly empty space.",
+    "criteria": [
+     {
+      "name": "Layout and visual polish at desktop width (spacing, alignment, colour)",
+      "score": 5,
+      "evidence": "A/01.png: a coherent dark navy palette with a teal button and three evenly gapped rounded cards, but every card is stretched to the full viewport height with only two lines of content at the top, so ~80% of each card is empty; the Notes textarea is an unstyled default white box with a monospace font (visible in A/03.png) that clashes with the dark theme, and the counter value '0' is the same small size as body text instead of a prominent figure."
+     },
+     {
+      "name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)",
+      "score": 8,
+      "evidence": "A/04.png (1024 wide) keeps the three cards side by side with no clipping; A/05.png (375 wide) stacks the cards vertically, the header keeps 'Dashboard' and the clock on one line, and the textarea shrinks to the card width with no horizontal overflow. The tall empty cards persist on both."
+     },
+     {
+      "name": "The interactions asked for visibly work (compare the after-interaction images)",
+      "score": 9,
+      "evidence": "Counter reads '0' in A/01.png and '1' in A/02.png after the button press; A/03.png shows 'hello' typed into the Notes textarea; the header clock advances from 10:08:18 PM (A/01.png) to 10:08:23 PM (A/02.png), and shows different times on the other viewports (A/04.png 10:08:19, A/05.png 10:08:21), so the live clock ticks."
+     },
+     {
+      "name": "No console errors; nothing visibly broken",
+      "score": 9,
+      "evidence": "The console log in packet.json is empty and nothing in A/01.png-A/05.png is clipped, missing, or mis-rendered; the only visual defect is the default-styled textarea in A/03.png."
+     },
+     {
+      "name": "Would a person use this?",
+      "score": 6,
+      "evidence": "All four requested parts are present and work (A/01.png-A/03.png), so it is usable, but the full-height empty cards and the plain white textarea in A/01.png make it look like an unfinished scaffold rather than a finished dashboard."
+     }
+    ]
+   },
+   "winner": null,
+   "confidence": "high"
+  }
+ }
+}

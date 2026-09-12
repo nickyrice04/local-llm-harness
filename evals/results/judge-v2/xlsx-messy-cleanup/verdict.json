@@ -1,0 +1,28 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "The summary sheet reads clearly (headers, formats, alignment, widths)", "score": 1, "evidence": "No images exist for artifact A (packet.json lists an empty images array; prompt.md says the artifact did not render), so there is no summary sheet to read."},
+        {"name": "Numbers are formatted (currency, thousands, dates) and totals are visible", "score": 1, "evidence": "Artifact A has no rendered images at all, so no numbers or totals are visible."},
+        {"name": "The chart (if any) is labelled and matches the data", "score": 1, "evidence": "Artifact A has no rendered images, so no chart is present to judge."},
+        {"name": "Nothing is cut off, #ERROR-ed or empty where data is expected", "score": 1, "evidence": "Artifact A rendered nothing (empty images list in packet.json); the whole deliverable is empty where a workbook was expected."},
+        {"name": "Would a person send this to a colleague?", "score": 1, "evidence": "There is nothing to send: artifact A has no images and did not render."}
+      ],
+      "overall": 1,
+      "highest_leverage_fix": "Produce a workbook that actually opens and renders; nothing was delivered."
+    },
+    "B": {
+      "criteria": [
+        {"name": "The summary sheet reads clearly (headers, formats, alignment, widths)", "score": 3, "evidence": "B/03.png: the Summary has a sensible layout (Region rows, 2026-01..2026-03 columns, Total column, Grand Total row) but the header row is unstyled plain text, 'Grand Total' is clipped to 'Grand Tota' by a narrow column A, and a helper row of '###' sits between the headers and the data."},
+        {"name": "Numbers are formatted (currency, thousands, dates) and totals are visible", "score": 2, "evidence": "B/01.png and B/02.png: every date cell in the Data sheet shows '###' because the column is too narrow, and amounts are raw numbers ('37.5', '1160', '2090') with no currency or thousands formatting; B/03.png: no total value is visible at all since every summary cell reads 'Err:522'."},
+        {"name": "The chart (if any) is labelled and matches the data", "score": 2, "evidence": "B/03.png: the chart has a title 'Total Amount by Region', axis titles, and region labels East/North/South/West, but it is empty (no bars, y-axis 0-12) and its legend reads 'Column E', so it shows no data."},
+        {"name": "Nothing is cut off, #ERROR-ed or empty where data is expected", "score": 1, "evidence": "B/03.png: all 20 summary formula cells (four regions x three months plus totals and grand total) display 'Err:522', the helper row shows '###', and 'Grand Tota' is clipped; B/01.png and B/02.png show '###' in every date cell (48 rows)."},
+        {"name": "Would a person send this to a colleague?", "score": 1, "evidence": "No: the Summary sheet in B/03.png is a grid of errors with a blank chart, and the Data sheet dates are unreadable (B/01.png); only the Notes sheet in B/04.png ('Removed 1 junk TOTAL row', 'Dropped 2 row(s)', 'Removed 3 duplicate order(s)', '48 rows') is fit to share."}
+      ],
+      "overall": 2,
+      "highest_leverage_fix": "Fix the SUMIFS formulas so they stop producing Err:522 (the helper row of '###' between the header and data suggests a circular or bad month-boundary reference); once the summary evaluates, the chart in B/03.png will populate. Then widen the date column and apply date and currency number formats."
+    }
+  },
+  "winner": "B",
+  "confidence": "high"
+}

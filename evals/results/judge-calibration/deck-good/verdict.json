@@ -1,0 +1,17 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "Visual consistency across slides (one palette, one type scale, aligned grid)", "score": 8, "evidence": "A/02.png and A/03.png share the same off-white ground, navy title at the same left margin and size, and the same teal rule under the title; A/01.png's dark title slide uses the same navy as the body-slide headings. The chart's default steel-blue bars (A/02.png) are the one colour that does not belong to the navy/teal palette."},
+        {"name": "No overflow, no empty placeholders, nothing cut off", "score": 8, "evidence": "Nothing is clipped on any slide: the chart in A/02.png sits fully inside the slide with all axis labels visible, and the bullets in A/03.png end well before the right edge. A/03.png does leave the bottom two-thirds of the slide blank, and A/01.png has only a title with no subtitle or date, which reads as unused space rather than a broken placeholder."},
+        {"name": "One idea per slide; titles state the point; text is readable at a glance", "score": 8, "evidence": "A/02.png title 'North carries the quarter' states the takeaway, backed by two short bullets ('North is 44% of sales', 'Four regions, 3,260 total'); A/03.png has exactly three short next steps under 'Three things to do next'. The third bullet 'Review gizmo pricing' in A/03.png introduces a product never mentioned elsewhere, so it is not self-explanatory to a viewer."},
+        {"name": "The chart (if any) is built from the data, labelled, and readable", "score": 8, "evidence": "A/02.png bar chart shows north ~1420, south ~850, east ~580, west ~410 against a 0-1600 gridded axis with region labels on the x-axis, matching the prompt data; the chart title is just 'Sales' with no units and there are no value labels on the bars, so the exact figures must be read off the gridlines."},
+        {"name": "Would a person present this?", "score": 7, "evidence": "The three slides (A/01.png-A/03.png) are clean, correct and legible, but visibly default: a lone title on a dark slide with no subtitle, a generic 'Sales' chart caption, default-blue bars, and a next-steps slide (A/03.png) that is mostly empty. Presentable with a few minutes of polish."}
+      ],
+      "overall": 7,
+      "highest_leverage_fix": "Fill the empty space: add a subtitle/date to the title slide, put value labels (and a unit) on the bars, and give the three next steps a line of context each so slide 3 is not two-thirds blank."
+    }
+  },
+  "winner": null,
+  "confidence": "high"
+}

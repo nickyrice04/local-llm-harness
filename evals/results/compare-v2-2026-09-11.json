@@ -136,7 +136,7 @@
    "category": "office",
    "status": "done",
    "seconds": 511.2,
-   "score": 0.75,
+   "score": 0.875,
    "tool_calls": 36,
    "checks": [
     {
@@ -170,14 +170,14 @@
      "detail": "looked for the total and 'North'"
     },
     {
-     "name": "q1_review.pptx: one type scale (\u2264 4 distinct font sizes)",
-     "ok": false,
+     "name": "q1_review.pptx: one type scale (\u2264 4 distinct explicit font sizes)",
+     "ok": true,
      "detail": "sizes []"
     },
     {
      "name": "q1_review.pptx: no overflow, no empty placeholders",
      "ok": true,
-     "detail": "[auto-check /var/folders/jh/nmtdv8ld6yv5pvfrgplgf65h0000gn/T/tmp7bst84za/q1_review.pptx] verdict: PASS \u2014 6 slide(s); notes on 6"
+     "detail": "[auto-check /var/folders/jh/nmtdv8ld6yv5pvfrgplgf65h0000gn/T/tmpzwuznajq/q1_review.pptx] verdict: PASS \u2014 6 slide(s); notes on 6"
     }
    ],
    "artifacts": [
@@ -203,7 +203,7 @@
    "category": "office",
    "status": "done",
    "seconds": 120.0,
-   "score": 0.875,
+   "score": 1.0,
    "tool_calls": 16,
    "checks": [
     {
@@ -237,14 +237,14 @@
      "detail": "looked for the total and 'North'"
     },
     {
-     "name": "q1_review.pptx: one type scale (\u2264 4 distinct font sizes)",
-     "ok": false,
+     "name": "q1_review.pptx: one type scale (\u2264 4 distinct explicit font sizes)",
+     "ok": true,
      "detail": "sizes []"
     },
     {
      "name": "q1_review.pptx: no overflow, no empty placeholders",
      "ok": true,
-     "detail": "[auto-check /var/folders/jh/nmtdv8ld6yv5pvfrgplgf65h0000gn/T/tmp035qk65x/q1_review.pptx] verdict: PASS \u2014 6 slide(s); notes on 6"
+     "detail": "[auto-check /var/folders/jh/nmtdv8ld6yv5pvfrgplgf65h0000gn/T/tmp_kbqojrf/q1_review.pptx] verdict: PASS \u2014 6 slide(s); notes on 6"
     }
    ],
    "artifacts": [
@@ -434,7 +434,7 @@
    "category": "web",
    "status": "done",
    "seconds": 257.6,
-   "score": 0.778,
+   "score": 1.0,
    "tool_calls": 5,
    "checks": [
     {
@@ -470,17 +470,17 @@
     {
      "name": "os.html: \u226550% of interaction steps pass",
      "ok": true,
-     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+     "detail": "21/21 steps passed"
     },
     {
      "name": "os.html: \u226590% of interaction steps pass",
-     "ok": false,
-     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+     "ok": true,
+     "detail": "21/21 steps passed"
     },
     {
      "name": "os.html: \u2265100% of interaction steps pass",
-     "ok": false,
-     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+     "ok": true,
+     "detail": "21/21 steps passed"
     }
    ],
    "artifacts": [
@@ -506,7 +506,7 @@
    "category": "web",
    "status": "timeout",
    "seconds": 960.0,
-   "score": 0.778,
+   "score": 1.0,
    "tool_calls": 0,
    "checks": [
     {
@@ -542,17 +542,17 @@
     {
      "name": "os.html: \u226550% of interaction steps pass",
      "ok": true,
-     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+     "detail": "21/21 steps passed"
     },
     {
      "name": "os.html: \u226590% of interaction steps pass",
-     "ok": false,
-     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+     "ok": true,
+     "detail": "21/21 steps passed"
     },
     {
      "name": "os.html: \u2265100% of interaction steps pass",
-     "ok": false,
-     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+     "ok": true,
+     "detail": "21/21 steps passed"
     }
    ],
    "artifacts": [

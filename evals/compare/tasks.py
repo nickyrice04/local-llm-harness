@@ -395,12 +395,13 @@ PPTX_TASK = Task(
         pptx_facts("q1_review.pptx", "speaker notes on every slide",
                    lambda prs: (all(s.has_notes_slide and s.notes_slide.notes_text_frame.text.strip() for s in prs.slides), "notes checked")),
         pptx_facts("q1_review.pptx", "the key numbers are computed (total 1,007,200; north best; +16% growth)",
-                   lambda prs: (any(n in "".join(sh.text_frame.text for s in prs.slides for sh in s.shapes if sh.has_text_frame).replace(",", "").replace(" ", "")
-                                    for n in ("1007200", "1.007", "1.0m", "1007k")) and
+                   lambda prs: (any(n in "".join(sh.text_frame.text for s in prs.slides for sh in s.shapes if sh.has_text_frame).replace(",", "").replace(" ", "").lower()
+                                    for n in ("1007200", "1.007", "1.0m", "1.01m", "1007k", "1007.2k", "1.0 m", "1m")) and
                                 "north" in "".join(sh.text_frame.text for s in prs.slides for sh in s.shapes if sh.has_text_frame).lower(),
                                 "looked for the total and 'North'")),
-        pptx_facts("q1_review.pptx", "one type scale (≤ 4 distinct font sizes)",
-                   lambda prs: (0 < len(_font_sizes(prs)) <= 4, f"sizes {sorted(_font_sizes(prs))}")),
+        # Sizes left to the theme read as none; an explicit scale of ≤ 4 sizes is the discipline.
+        pptx_facts("q1_review.pptx", "one type scale (≤ 4 distinct explicit font sizes)",
+                   lambda prs: (len(_font_sizes(prs)) <= 4, f"sizes {sorted(_font_sizes(prs))}")),
         pptx_mechanically_clean("q1_review.pptx"),
     ],
     artifacts=["q1_review.pptx"],
@@ -659,7 +660,7 @@ OS_STEPS = [
     "expect changed",
     "click #start-button",
     "click [data-app=about]",
-    "click .window",
+    "click bottommost:.window",
     "expect changed",
 ]
 

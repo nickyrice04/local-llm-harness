@@ -107,7 +107,9 @@ PAGE = """<!doctype html><html><body>
 <button id="go" onclick="document.getElementById('out').textContent='clicked'">Go</button>
 <div id="out"></div>
 <textarea id="pad"></textarea>
-<div id="win" style="position:absolute;left:10px;top:120px;width:100px;height:60px;background:#ccc"></div>
+<div class="win" style="display:none"></div>
+<div id="under" class="win" style="position:absolute;left:10px;top:120px;width:100px;height:60px;background:#999;z-index:1" onclick="this.style.zIndex=9"></div>
+<div id="win" class="win" style="position:absolute;left:10px;top:120px;width:100px;height:60px;background:#ccc;z-index:5"><div class="bar">t</div></div>
 <button id="dead">Dead</button>
 <script>
 const w = document.getElementById('win'); let drag = null;
@@ -122,14 +124,16 @@ async def test_interactions_report_whether_the_dom_changed_and_expectations_hold
     page = paths.workspace() / "app.html"
     page.write_text(PAGE)
     steps = web.parse_steps("click #go; expect #out text clicked\ntype #pad hello world\nexpect #pad visible\n"
-                            "drag #win 80 40\nclick #dead\nexpect changed\nexpect #nope count 1")
+                            "drag .win .bar 80 40\nclick .win\nclick bottommost:.win\nexpect changed\nclick #dead\nexpect changed\nexpect #nope count 1")
     report = await web.run_interactions(page, steps)
     assert report is not None
     by_step = {s.step: s for s in report.steps}
     assert by_step["click #go"].ok and by_step["click #go"].changed is True
     assert by_step["expect #out text clicked"].ok
     assert by_step["type #pad hello world"].ok and by_step["expect #pad visible"].ok
-    assert by_step["drag #win 80 40"].changed is True                         # the window moved (style changed)
+    assert by_step["drag .win .bar 80 40"].ok and by_step["drag .win .bar 80 40"].changed is True   # a selector with a space; the window moved
+    assert by_step["click .win"].ok                                            # hidden skipped; the topmost (z 5) is the target
+    assert by_step["click bottommost:.win"].ok and by_step["click bottommost:.win"].changed is True   # the one underneath came forward
     assert by_step["click #dead"].changed is False                            # a button that does nothing
     assert by_step["expect changed"].ok is False                              # …and the assertion says so
     assert by_step["expect #nope count 1"].ok is False and "0 match" in by_step["expect #nope count 1"].note
