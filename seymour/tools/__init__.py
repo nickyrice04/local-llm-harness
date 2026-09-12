@@ -41,10 +41,17 @@ from seymour.llm_json import parse_json_object
 
 logger = logging.getLogger(__name__)
 
-# Cap on any tool result before it re-enters the prompt (bounded buffers).
-# Larger than v1's 6000: reading code needs room, and every consumer that
-# LOGS results excerpts them again at write time (run_executor's 2000).
-MAX_RESULT_CHARS = 8000
+# The DESIGN budget for a tool result: what a tool aims to return (web
+# fetch sizes its extraction to this, read_file its byte window). It is
+# the same number as the context economy's inline budget on purpose — a
+# result under it enters the prompt whole. Since 2026-09-11 it is no
+# longer where results are CUT: execute() bounds at HARD_RESULT_CHARS
+# (a belt against a runaway tool) and everything between the two is
+# spilled by seymour.context to an artifact the model can read back.
+MAX_RESULT_CHARS = 16_000
+# The belt: no single result may exceed this even before spilling (a tool
+# that returns megabytes is a bug, and the spill file would only hide it).
+HARD_RESULT_CHARS = 400_000
 
 
 @dataclass(frozen=True)
@@ -360,9 +367,11 @@ async def execute(name: str, args: dict) -> str:
     return bounded(result)
 
 
-def bounded(text: str, limit: int = MAX_RESULT_CHARS) -> str:
+def bounded(text: str, limit: int = HARD_RESULT_CHARS) -> str:
     """Cap a result, SAYING so. Tools that manage their own budget
-    (shell, fetch) already come in under the limit; this is the belt."""
+    (shell, fetch) already come in well under the limit; this is the belt
+    against a runaway one. Oversized-but-sane results are not cut here —
+    the run's context economy spills them to a file and excerpts them."""
     if len(text) <= limit:
         return text
     return (text[:limit]

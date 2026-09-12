@@ -34,7 +34,11 @@ from seymour.tools import MAX_RESULT_CHARS, Tool, paths
 READ_DEFAULT_LINES = 300
 READ_MAX_LINES = 2000
 READ_MAX_LINE_CHARS = 2000
-READ_MAX_BYTES = 50 * 1024
+# The byte window of one read: the same number as the context economy's
+# inline budget, so read_file's own honest footer ("Use offset=N to
+# continue") is the only bound a read ever hits — it is exempt from the
+# spill policy because the file IS the artifact.
+READ_MAX_BYTES = MAX_RESULT_CHARS
 # Files larger than this are not text the model should slurp.
 MAX_FILE_BYTES = 4 * 1024 * 1024
 # How many actual lines a refused edit reveals so the retry can land.

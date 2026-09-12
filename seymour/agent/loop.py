@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from seymour import inference, runtime, tools
+from seymour.context import spill as spill_result
 from seymour.db import AgentStep, AgentTask, SessionLocal
 from seymour.engine.adapter import GenerationRequest
 from seymour.events import bus
@@ -38,6 +39,17 @@ logger = logging.getLogger(__name__)
 # memory of the task is its NOTES (the checkpoint); the journal tail just
 # gives the model its immediate context.
 JOURNAL_TAIL = 12
+# …and how many CHARACTERS of journal ride along at most — the agent's
+# own context economy. Twelve entries of up to 16 KB each would be 48k
+# tokens, more than a 32k context holds; the tail is taken newest-first
+# until this budget is spent and the rest is replaced by one line saying
+# how many entries were left out (the notes are the checkpoint that
+# survives — the journal is only immediate context).
+JOURNAL_TAIL_CHARS = 40_000
+# A journal entry's stored size: the inline budget plus the guard
+# wrapping. Longer results were spilled to an artifact before they got
+# here, so this cut is a belt, not the economy.
+JOURNAL_ENTRY_CHARS = 20_000
 
 # How long one step may take before the loop gives up on it. Generous
 # enough for a real think plus a full-size reply (STEP_MIN_TOKENS at the
@@ -84,7 +96,7 @@ def journal(task_id: str, kind: str, content: str) -> None:
     a human audits what actually happened.
     """
     with SessionLocal() as db:
-        step = AgentStep(task_id=task_id, kind=kind, content=content[:8000])
+        step = AgentStep(task_id=task_id, kind=kind, content=content[:JOURNAL_ENTRY_CHARS])
         db.add(step)
         db.commit()
         step_id = step.id
@@ -134,8 +146,9 @@ def _build_messages(task: AgentTask, tail: list[AgentStep],
     messages.append({"role": "user", "content": f"Your task:\n{task.goal}"})
     # The changing tail rides in ONE user message near the end: checkpoint
     # notes first, then the recent journal. Tool results that came from the
-    # outside world were guard-wrapped when journaled.
-    tail_lines = [f"[{step.kind}] {step.content}" for step in tail]
+    # outside world were guard-wrapped when journaled. The journal is
+    # budgeted by characters, newest first (JOURNAL_TAIL_CHARS).
+    tail_lines = budget_journal(tail, JOURNAL_TAIL_CHARS)
     messages.append({
         "role": "user",
         "content": (
@@ -147,6 +160,28 @@ def _build_messages(task: AgentTask, tail: list[AgentStep],
         ),
     })
     return messages
+
+
+def budget_journal(tail: list, limit_chars: int) -> list[str]:
+    """The journal lines that fit the budget, newest first, oldest
+    dropped — with one honest line in their place. The newest entry is
+    always kept (cut if it alone exceeds the budget), so the model
+    always sees the result of the step it just took."""
+    kept: list[str] = []
+    used = 0
+    for step in reversed(tail):
+        line = f"[{step.kind}] {step.content}"
+        if kept and used + len(line) > limit_chars:
+            break
+        if not kept and len(line) > limit_chars:
+            line = line[:limit_chars] + " …[cut to the journal budget]"
+        kept.append(line)
+        used += len(line)
+    kept.reverse()
+    dropped = len(tail) - len(kept)
+    if dropped:
+        kept.insert(0, f"[{dropped} earlier journal entries omitted for room — your notes hold the checkpoint]")
+    return kept
 
 
 async def run_step(task_id: str, tier: Tier = Tier.BACKGROUND_AGENT,
@@ -315,6 +350,13 @@ async def run_step(task_id: str, tier: Tier = Tier.BACKGROUND_AGENT,
     # + sandbox-exec for run_command) is its permission boundary, and
     # anything beyond it must go through ask_user.
     result = await tools.execute(name, args)
+    # An oversized result is spilled to an artifact and excerpted — the
+    # same economy the chat run uses; the journal keeps the excerpt and
+    # the pointer, never a silent cut.
+    result, spilled = spill_result(name, result, run_id=task_id)
+    if spilled:
+        journal(task_id, "status", f"{name} returned {spilled['chars']:,} characters; the full "
+                                   f"result is in {spilled['path']} (read_file it for the rest).")
     tool = tools.TOOLS.get(name)
     if tool is not None and tool.name in ("web_search", "fetch_page"):
         # Results from the outside world are untrusted — wrap them so the

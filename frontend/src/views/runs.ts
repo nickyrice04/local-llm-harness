@@ -83,13 +83,36 @@ export function show(container: HTMLElement): ViewHandle {
       case "note":
         summary = `${d.what}${d.detail ? ": " + d.detail : ""}`;
         break;
+      case "context":
+        // The context economy at work (spill / prune / compact): the
+        // headline is traceability, so every decision is a line here
+        // with its before/after size — never a silent optimizer.
+        if (d.what === "spill") {
+          summary = `spill · ${d.tool} · ${Number(d.chars).toLocaleString()} chars → ${d.path} `
+            + `(${Number(d.inline_chars).toLocaleString()} inline)`;
+        } else if (d.what === "prune") {
+          summary = `prune · ${d.count} result(s) · ~${d.before_tokens} → ~${d.after_tokens} tokens `
+            + `of ${d.budget_tokens}`;
+        } else if (d.what === "compact") {
+          summary = `compact (${d.method}) · ${d.replaced_messages} messages → summary · `
+            + `~${d.before_tokens} → ~${d.after_tokens} tokens · last ${d.kept_recent_pairs} pairs verbatim`;
+        } else {
+          summary = `${d.what}${d.reason ? ": " + d.reason : ""}${d.error ? ": " + d.error : ""}`;
+        }
+        break;
       case "error":
         summary = `${d.kind}: ${d.message}`;
         break;
-      case "run_end":
+      case "run_end": {
+        const c = d.context ?? {};
         summary = `${d.status} · ${d.tool_calls} tools · ${d.rounds} rounds `
-          + `· ${d.seconds}s`;
+          + `· ${d.seconds}s`
+          + (c.peak_tokens ? ` · peak ~${c.peak_tokens} tokens` : "")
+          + (c.spills ? ` · ${c.spills} spill(s)` : "")
+          + (c.prunes ? ` · ${c.prunes} pruned` : "")
+          + (c.compactions ? ` · ${c.compactions} compaction(s)` : "");
         break;
+      }
       default:
         summary = JSON.stringify(d).slice(0, 160);
     }
@@ -101,7 +124,7 @@ export function show(container: HTMLElement): ViewHandle {
     const line = el("div.ev-line", {}, ...parts);
     // The payload, on demand: arguments and results in full (bounded at
     // write time, with the true length noted when excerpted).
-    const body = d.traceback ?? d.result ?? d.message ?? d.args;
+    const body = d.traceback ?? d.result ?? d.message ?? d.summary ?? d.actions ?? d.args;
     if (body !== undefined) {
       const detail = el("pre.ev-detail", { hidden: true },
         typeof body === "string" ? body : JSON.stringify(body, null, 2));

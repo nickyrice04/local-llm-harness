@@ -26,6 +26,7 @@ import uuid
 from dataclasses import dataclass
 
 from seymour import inference, runtime, tools
+from seymour.context import Economy, estimate_tokens, strip as strip_meta
 from seymour.events import bus
 from seymour.db import ChatSession, Message, Run, RunEvent, SessionLocal, utcnow
 from seymour.engine.adapter import GenerationRequest
@@ -69,9 +70,16 @@ class RunPolicy:
 # thread, never a modal.
 CHAT_POLICY = RunPolicy(
     preset="chat", tool_scope="full",
-    # Twelve tools: a read → edit → run-tests → fix loop is four calls a
-    # cycle, and the budget must survive two of them plus a search.
-    max_tool_calls=12, max_rounds=16,
+    # Sixty tools (was twelve until 2026-09-11). The old cap existed
+    # because the harness could not SURVIVE a long run — every result
+    # stayed in the prompt forever — so it forbade one, and every real
+    # task died on it (the fourth solar-system run "ran out of tool
+    # budget" while doing the right thing). The context economy
+    # (seymour/context: spill, prune, compact) is what makes a long run
+    # affordable; the cap is now a watchdog against a runaway loop, not
+    # a budget a healthy task can hit. Rounds are the belt over it (a
+    # round without a tool call is a nudge or the answer).
+    max_tool_calls=60, max_rounds=90,
     max_tokens=4096, enable_thinking=False, temperature=0.7,
     # Watchdog gaps sized to a WATCHING human, not to infinity. The old
     # 300 s first-token allowance outlived every client that would wait
@@ -293,7 +301,24 @@ async def stream_chat_run(
     loop = asyncio.get_running_loop()
     started = loop.time()
     first_token_at: float | None = None
-    convo = list(base_messages)
+    # The context economy for this run: spill / prune / compact, each
+    # decision logged as a "context" event (the Runs tab shows it). The
+    # convo below carries `_meta` tags; strip_meta() removes them for
+    # the engine. The summarizer runs on the same slot as the chat (its
+    # cache is about to be rewritten anyway), thinking off, tier 1: the
+    # person is waiting on this run.
+    async def summarize(messages: list[dict]) -> str:
+        return await runtime.scheduler.complete(
+            Tier.LIVE_CHAT,
+            GenerationRequest(messages=messages, max_tokens=1500, temperature=0.2,
+                              cache_key=f"chat:{session_id}",
+                              template_kwargs={"enable_thinking": False}),
+            label=f"compact:{session_id[:8]}")
+    economy = Economy(
+        context_tokens=getattr(runtime.caps, "context_per_slot", None),
+        reply_tokens=inf.max_tokens, summarize=summarize,
+        on_event=log.event, run_id=log.id)
+    convo = economy.tag_base(base_messages)
     tool_calls = 0                     # executed tools (the real budget)
     rounds = 0                         # model calls (belt + braces)
     writes_allowed = False             # the once-per-run grant (below)
@@ -317,15 +342,28 @@ async def stream_chat_run(
                 # all and survives on frontier models; a 35B does not).
                 log.event("note", what="max_rounds reached")
                 break
+            # The economy runs before every model call: nothing when the
+            # prompt is small, prune under pressure, compact under more.
+            # What it did this round is one small frame for the chat (the
+            # full account is in the "context" events of the trace).
+            tally_before = dict(economy.stats)
+            convo = await economy.prepare(convo)
+            if economy.stats["compactions"] > tally_before["compactions"]:
+                yield {"economy": {"what": "compacted", "messages": economy.stats["compacted_messages"] - tally_before["compacted_messages"],
+                                   "tokens": economy.stats["peak_tokens"], "now_tokens": estimate_tokens(convo)}}
+            elif economy.stats["prunes"] > tally_before["prunes"]:
+                yield {"economy": {"what": "pruned", "results": economy.stats["prunes"] - tally_before["prunes"],
+                                   "chars": economy.stats["pruned_chars"] - tally_before["pruned_chars"],
+                                   "now_tokens": estimate_tokens(convo)}}
             request = GenerationRequest(
-                messages=convo,
+                messages=strip_meta(convo),
                 max_tokens=inf.max_tokens,
                 cache_key=f"chat:{session_id}",
                 **inf.request_kwargs(thinking_default=policy.enable_thinking),
             )
             log.event("model_call", round=rounds,
                       messages=len(convo), max_tokens=inf.max_tokens,
-                      thinking=thinking_on)
+                      thinking=thinking_on, prompt_tokens_est=economy.stats["peak_tokens"])
 
             buffer = ""
             sniffing = True
@@ -503,16 +541,14 @@ async def stream_chat_run(
                     continue
                 yield {"tool": {"name": name, "args": args,
                                 "summary": _describe(catalog, name, args)}}
-                result = await _execute(log, catalog, name, args)
+                result = await _execute(log, catalog, name, args, economy)
                 yield _tool_result_frame(name, args, result, log)
                 _track_page(pages, name, args, log)
                 result += _repeat_note(repeat_state, name, args)
-                convo = convo + [
-                    {"role": "assistant", "content": round_text},
-                    {"role": "user", "content":
-                        untrusted_block(f"{name} result", result)
-                        + _SYNTHESIZE_NOW},
-                ]
+                convo = convo + economy.pair(
+                    round_text, name, args,
+                    untrusted_block(f"{name} result", result) + _SYNTHESIZE_NOW,
+                    ok=not tools.is_error(name, result), spill=log.last_spill)
                 continue
 
             # ---- A sniffed whole-JSON tool round -------------------------
@@ -608,16 +644,14 @@ async def stream_chat_run(
                 continue
             yield {"tool": {"name": name, "args": args,
                             "summary": _describe(catalog, name, args)}}
-            result = await _execute(log, catalog, name, args)
+            result = await _execute(log, catalog, name, args, economy)
             yield _tool_result_frame(name, args, result, log)
             _track_page(pages, name, args, log)
             result += _repeat_note(repeat_state, name, args)
-            convo = convo + [
-                {"role": "assistant", "content": buffer},
-                {"role": "user", "content":
-                    untrusted_block(f"{name} result", result)
-                    + _SYNTHESIZE_NOW},
-            ]
+            convo = convo + economy.pair(
+                buffer, name, args,
+                untrusted_block(f"{name} result", result) + _SYNTHESIZE_NOW,
+                ok=not tools.is_error(name, result), spill=log.last_spill)
 
         # A run that ended with NOTHING visible must say so — a silent
         # empty bubble reads as "broken".
@@ -695,7 +729,10 @@ async def stream_chat_run(
                 db.commit()
         log.finish(status, tool_calls=tool_calls, rounds=rounds,
                    visible_chars=len(visible),
-                   seconds=round(loop.time() - started, 2))
+                   seconds=round(loop.time() - started, 2),
+                   # The economy's tally: how many spills, prunes and
+                   # compactions the run needed, and its peak prompt size.
+                   context=economy.stats)
         if visible:
             # Quiet Tier-3 follow-ups: a real title for new
             # conversations, and memory extraction.
@@ -785,10 +822,14 @@ def _describe(catalog: dict, name: str, args: dict) -> str:
     return tools.describe_call(tool, args if isinstance(args, dict) else {})
 
 
-async def _execute(log: RunLog, catalog: dict, name: str, args: dict) -> str:
+async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
+                   economy: Economy | None = None) -> str:
     """Run one tool through the registry, logging call and result.
     tools.execute never raises — errors come back as readable text, and
-    the model reads them and corrects course (that IS the recovery)."""
+    the model reads them and corrects course (that IS the recovery).
+    An oversized result is SPILLED by the economy before it enters the
+    prompt (the full text goes to an artifact; the model reads an
+    excerpt plus the pointer) — never truncated in silence."""
     log.event("tool_call", tool=name, args=args)
     safe_args = args if isinstance(args, dict) else {}
     path = str(safe_args.get("path") or "") or None
@@ -797,6 +838,9 @@ async def _execute(log: RunLog, catalog: dict, name: str, args: dict) -> str:
     t0 = time.monotonic()
     result = await tools.execute(name, safe_args)
     ok = not tools.is_error(name, result)
+    log.last_spill = None
+    if economy is not None:
+        result, log.last_spill = economy.result_text(name, result)
     # The harness verifies what was written — every time, not when the
     # model remembers to. The report rides on the tool result the model
     # reads next, so a page that throws is fixed in the next round.

@@ -602,6 +602,14 @@ export function show(container: HTMLElement): ViewHandle {
         // Authoritative system notices (e.g. the vision diagnosis) render
         // in Seymour's own voice, not as model output.
         if (frame.notice) sysNote(frame.notice);
+        // The context economy did something this round: say so in one
+        // quiet line (the trace has the full account).
+        if (frame.economy) {
+          const e = frame.economy;
+          sysNote(e.what === "compacted"
+            ? `compacted ${e.messages} earlier messages into a summary · ~${e.tokens} → ~${e.now_tokens} tokens`
+            : `pruned ${e.results} older result(s) (${Number(e.chars).toLocaleString()} chars) · ~${e.now_tokens} tokens`);
+        }
         // The write gate: Seymour is about to change the person's files
         // and is asking — IN the thread, once per run, never a modal.
         if (frame.approval) askApproval(frame.approval);
