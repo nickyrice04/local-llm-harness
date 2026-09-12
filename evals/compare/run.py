@@ -43,6 +43,10 @@ from pathlib import Path
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# The repo root too: evals.render (the judge's renderer) and seymour.verify
+# import from there (measured 2026-09-11: pytest's rootdir hid the gap
+# and the first full run crashed after its first task).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tasks import TASKS, Task  # noqa: E402
 
 # The app under test (SEYMOUR_BASE overrides; 8765 is the dev/setup port,
