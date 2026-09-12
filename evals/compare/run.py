@@ -95,6 +95,14 @@ def runtime_check(task: Task, workspace: Path) -> str:
     except ImportError:
         return "not measured (pip install playwright && playwright install chromium)"
     notes = []
+    try:
+        return _runtime_check_sync(pages, sync_playwright)
+    except Exception as error:
+        return f"not measured ({type(error).__name__}: {str(error)[:80]})"
+
+
+def _runtime_check_sync(pages, sync_playwright) -> str:
+    notes = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         for page_path in pages:
@@ -131,7 +139,10 @@ def render_for_judge(task: Task, workspace: Path, dest: Path) -> dict:
         return {}
     from evals.render import render_sync
     artifact = workspace / task.render["artifact"]
-    out = render_sync(artifact, dest / "render", task.render.get("steps"))
+    try:
+        out = render_sync(artifact, dest / "render", task.render.get("steps"))
+    except Exception as error:                    # a render failure must never lose a record
+        return {"images": 0, "notes": [f"render crashed: {type(error).__name__}: {error}"]}
     if out.get("interaction"):
         (dest / "render" / "interaction.txt").write_text(out["interaction"], encoding="utf-8")
     return {"images": len(out.get("images", [])), "notes": out.get("notes", []),
@@ -210,11 +221,13 @@ async def run_seymour(task: Task, model_id: str) -> dict:
     context = (trace.get("stats") or {}).get("context") or {}
     tool_calls = sum(1 for e in events if e["type"] == "tool_call")
     compactions = sum(1 for e in events if e["type"] == "context" and e["data"].get("what") == "compact")
-    value, rows = score(task, WORKSPACE)
-    runtime = runtime_check(task, WORKSPACE)
+    # Checkers and the renderer drive Playwright/soffice through their
+    # own event loops (asyncio.run) — they must not run ON this loop.
+    value, rows = await asyncio.to_thread(score, task, WORKSPACE)
+    runtime = await asyncio.to_thread(runtime_check, task, WORKSPACE)
     dest = RESULTS / f"compare-{LABEL}" / "seymour" / task.id
     kept = keep_artifacts(task, WORKSPACE, dest)
-    rendered = render_for_judge(task, WORKSPACE, dest)
+    rendered = await asyncio.to_thread(render_for_judge, task, WORKSPACE, dest)
     clean_task_files(task, WORKSPACE)
     return {"harness": "seymour", "task": task.id, "category": task.category,
             "status": status, "seconds": seconds, "score": round(value, 3),

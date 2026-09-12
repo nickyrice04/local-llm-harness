@@ -495,8 +495,8 @@ BUG_TASK = Task(
         ("the fix is in loader.py (the cause), not report.py (the symptom)",
          lambda ws: ((ws / "inv/loader.py").read_text() != INV_LOADER and (ws / "inv/report.py").read_text() == INV_REPORT,
                      f"loader changed={ (ws / 'inv/loader.py').read_text() != INV_LOADER }, report changed={ (ws / 'inv/report.py').read_text() != INV_REPORT }")),
-        ("the fix is minimal (≤ 3 lines of loader.py differ)",
-         lambda ws: (_diff_lines(INV_LOADER, (ws / "inv/loader.py").read_text()) <= 3,
+        ("the fix is minimal (1–3 lines of loader.py differ)",
+         lambda ws: (0 < _diff_lines(INV_LOADER, (ws / "inv/loader.py").read_text()) <= 3,
                      f"{_diff_lines(INV_LOADER, (ws / 'inv/loader.py').read_text())} lines differ")),
     ],
     artifacts=["inv/loader.py"],
@@ -619,6 +619,8 @@ def _original() -> tuple[float, str] | None:
 
 
 def _bench_checksum_matches(ws: Path) -> tuple[bool, str]:
+    if (ws / "textstats.py").read_text() == TEXTSTATS:
+        return False, "textstats.py was not changed"        # an untouched module earns nothing
     now = _run_bench(ws)
     ref = _original()
     if now is None or ref is None:

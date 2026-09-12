@@ -1064,3 +1064,65 @@ solar system)." This round:
   auto-check judges whatever it writes. The card itself worked: file
   name, verdict badge, Code | Preview, open / edit / re-check, the
   check's facts line — the shape Nick asked for.
+
+- 2026-09-11 (the Fable overhaul; on AC power throughout — `pmset -g ps`
+  said "AC Power" before every measurement below). The brief's order was
+  kept: 1.1 economy and the cap → 1.6 layout and cards → 1.2 primitives →
+  1.3 verifiers → Part 3 render + judge → Part 4 evals → 1.4 measurements
+  → 1.5 profiles. Baseline: 131 tests green; end of day: 175 green.
+  - CONTEXT ECONOMY (`seymour/context/`): spill (> 16 KB → artifact,
+    head 2/3 + tail 1/3 + pointer), prune under 40 % of the context
+    (superseded/stale reads, superseded write results, old spill
+    excerpts, ageing read-only results), compact at 70 % (oldest
+    tool-pair-balanced range → the model's structured summary, mechanical
+    ledger as fallback, last 3 pairs verbatim, todo plan re-stated exact).
+    Every decision is a `context` RunEvent. CHAT_POLICY 12/16 → 60/90.
+    Model-free proof: a 20-call run on an 8k context finishes, with
+    prune and compact firing and the engine never seeing `_meta`.
+    Reality check on the loaded MoE: the handshake reports a 250,112-token
+    unified context, so at 40 % / 70 % the economy rarely fires there —
+    it is insurance for smaller contexts and for MLX; the cap removal is
+    what mattered today (the xlsx eval run reached 42 tool calls).
+  - LAYOUT (measured in the browser pane): before, a 1600 px window gave
+    the editor ~100 px; after, 1600 px → chat 400 / tree 180 / editor 518
+    (side panel collapsed first, by the pane's container query), 1000 px
+    → avatar column collapsed, tree hidden, chat 320 / editor 480. The
+    960 px container rule silently lost the cascade until it was moved
+    below the base rule (equal specificity, source order decides).
+  - SMOKE (code-bug-across-files, Seymour through the chat executor,
+    thinking on): first run 0.60 in 125 s — five of eight calls arrived
+    with EMPTY arguments because the model wrote the flat shape
+    `{"tool": "read_file", "path": …}` and the parser dropped anything
+    outside `args`; the last round spent all 8,192 tokens thinking and
+    the run ended with nothing visible. Both the harness's fault (the
+    brace-scanner rule again). Fixed (flat shape accepted, bare value →
+    the single required arg, an all-thinking round retried with thinking
+    off, the raw reply head logged on every tool_call event); second run
+    1.00 in 49.9 s, 8 tools. dsh: 1.00 in 28.6 s, 9 tools.
+  - PROMPT CACHE, measured (1.4.2): llama-server's `cache_n` per request;
+    that run's rounds hit 0 % (cold), then 91–98 % on every later round,
+    mean 84 %. The cache works; the wall-clock gap to dsh on that task is
+    not a cache miss. Per-round hit % is now in the trace, the run's mean
+    and minimum in run_end.
+  - MTP on the MoE (1.4.7 by another route): the handshake measured
+    73 drafted / 68 accepted = 93 % on the loop model, so speculative
+    decoding is already on and earning its keep; `--model-draft` was
+    not tried.
+  - soffice CANNOT run inside the sandbox-exec profile: exit 0, no
+    output, 0.17 s, nothing written (measured with a pptx → pdf and with
+    a private -env:UserInstallation inside the workspace). The first
+    xlsx eval run spent ~30 commands trying to make it recalculate. The
+    verifiers run outside the sandbox: `verify_file` on demand, and the
+    executor now verifies every .xlsx/.pptx/.docx/.html a command
+    changed (auto_check used to follow file tools only — the workbook was
+    written by python thirty times and never checked).
+  - MODEL PROFILE (1.5), measured on the MoE at load: tools in template
+    yes · thinking channel `reasoning_content` · system prompt 3,983
+    tokens (tokenizer-counted; chars/4 would have said ~4,600) · context
+    250,112. Stored per model id; the assumed fallback runs an unknown
+    model with thinking off and in-band tools and says so.
+  - Two boot/run crashes caught only by the real run, now tested: the
+    eval runner's import path (pytest's rootdir hid it) and a decorator
+    that landed on a helper inserted above `lifespan`.
+  - EVAL v2 (Seymour vs dsh, same llama-server, thinking on both):
+    RESULTS TABLE PENDING — see evals/results/compare-v2-*.md.
