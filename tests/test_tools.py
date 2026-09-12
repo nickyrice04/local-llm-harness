@@ -379,3 +379,14 @@ def test_salvage_recovers_a_write_broken_by_a_raw_quote_in_the_content():
     # Not a file write, or no content shape: nothing salvaged.
     assert tools.salvage_call('{"tool": "run_command", "args": {"command": "ls"}}') is None
     assert tools.salvage_call('{"tool": "write_file", "args": {"path": "a"') is None
+
+
+def test_parse_call_accepts_the_flat_shape_a_35b_writes():
+    """Measured 2026-09-11: {"tool": "read_file", "path": "inv/loader.py"} —
+    arguments beside the tool name, not under args. Five of eight calls in
+    one run came this way and were answered "path is required"."""
+    assert tools.parse_call('{"tool": "read_file", "path": "inv/loader.py"}') == {"tool": "read_file", "args": {"path": "inv/loader.py"}}
+    assert tools.parse_call('{"name": "edit_lines", "path": "a.py", "tag": "1F3C", "start": 3, "end": 3, "text": "x"}')["args"] == {
+        "path": "a.py", "tag": "1F3C", "start": 3, "end": 3, "text": "x"}
+    # The documented shape is untouched, and an explicit empty args stays empty-but-flat-free.
+    assert tools.parse_call('{"tool": "list_files", "args": {}}') == {"tool": "list_files", "args": {}}

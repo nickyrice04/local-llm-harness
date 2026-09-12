@@ -175,6 +175,8 @@ _TOOL_CALL_TAG = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL
 _FENCED_BODY = re.compile(r"\}\s*```[A-Za-z0-9_+-]*[ \t]*\r?\n(.*?)(?:\r?\n?```[^\S\n]*(?:\n.*)?|\Z)\s*$", re.DOTALL)
 _BODY_FIELD = {"write_file": "content", "append_file": "content",
                "edit_lines": "text", "replace_in_file": "new_string"}
+# The keys that are the CALL's envelope, never an argument (see parse_call).
+_ENVELOPE_KEYS = frozenset({"tool", "name", "function", "args", "arguments", "parameters", "id", "type"})
 
 
 def fenced_body(text: str) -> str | None:
@@ -222,6 +224,12 @@ def parse_call(text: str) -> dict | None:
             args = {"input": args}
     if not isinstance(args, dict):
         args = {}
+    if not args:
+        # The FLAT shape — {"tool": "read_file", "path": "a.py"} — which a
+        # 35B produces routinely (measured 2026-09-11: five of eight calls
+        # in one run, each answered "path is required" and retried the same
+        # way). Every key that is not the envelope is an argument.
+        args = {k: v for k, v in candidate.items() if k not in _ENVELOPE_KEYS}
     field = _BODY_FIELD.get(name.strip())
     if body is not None and field and not args.get(field):
         args = {**args, field: body}

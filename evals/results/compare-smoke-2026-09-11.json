@@ -1,0 +1,96 @@
+{
+ "label": "smoke",
+ "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+ "records": [
+  {
+   "harness": "seymour",
+   "task": "code-bug-across-files",
+   "category": "code",
+   "status": "done",
+   "seconds": 124.8,
+   "score": 0.6,
+   "tool_calls": 8,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": false,
+     "detail": "1 failed, 2 passed in 0.01s"
+    },
+    {
+     "name": "tests/test_inventory.py untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "data/stock.csv untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "the fix is in loader.py (the cause), not report.py (the symptom)",
+     "ok": false,
+     "detail": "loader changed=False, report changed=False"
+    },
+    {
+     "name": "the fix is minimal (\u2264 3 lines of loader.py differ)",
+     "ok": true,
+     "detail": "0 lines differ"
+    }
+   ],
+   "artifacts": [
+    "compare-smoke/seymour/code-bug-across-files/loader.py"
+   ],
+   "runtime": "",
+   "final": "I ran out of room before writing an answer \u2014 ask again and I'll get straight to it.",
+   "run_id": "08e4cea4-da1c-4fd3-b1a0-d88590c19c1b",
+   "session_id": "45e1167c-d3f5-4e21-8ad5-ec2febec134e",
+   "peak_prompt_tokens": 6051,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  },
+  {
+   "harness": "dsh",
+   "task": "code-bug-across-files",
+   "category": "code",
+   "status": "done",
+   "seconds": 28.6,
+   "score": 1.0,
+   "tool_calls": 9,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "3 passed in 0.00s"
+    },
+    {
+     "name": "tests/test_inventory.py untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "data/stock.csv untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "the fix is in loader.py (the cause), not report.py (the symptom)",
+     "ok": true,
+     "detail": "loader changed=True, report changed=False"
+    },
+    {
+     "name": "the fix is minimal (\u2264 3 lines of loader.py differ)",
+     "ok": true,
+     "detail": "2 lines differ"
+    }
+   ],
+   "artifacts": [
+    "compare-smoke/dsh/code-bug-across-files/loader.py"
+   ],
+   "runtime": "",
+   "final": "**All 3 tests pass.**\n\n### Root cause\n\n**File:** `inv/loader.py`, function `_int()` (line 10)\n\n**Bug:** `value.isdigit()` returns `False` for strings with leading/trailing whitespace (e.g. `\" 3\"`). The CSV file has a space before `3` in the qty column. So `_int(\" 3\")` returned the original string `\" 3\"` instead of `3`.\n\n**Why the failure showed up in `report.py`:** The loader silently passed the s",
+   "render": {}
+  }
+ ]
+}

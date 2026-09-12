@@ -667,6 +667,8 @@ export function show(container: HTMLElement): ViewHandle {
           const e = frame.economy;
           sysNote(e.what === "compacted"
             ? `compacted ${e.messages} earlier messages into a summary · ~${e.tokens} → ~${e.now_tokens} tokens`
+            : e.what === "thinking_off"
+            ? `the model spent its whole reply budget (${e.tokens} tokens) thinking — retrying with thinking off`
             : `pruned ${e.results} older result(s) (${Number(e.chars).toLocaleString()} chars) · ~${e.now_tokens} tokens`);
         }
         // The write gate: Seymour is about to change the person's files

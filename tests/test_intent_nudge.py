@@ -39,3 +39,11 @@ def test_printed_code_without_a_write_is_caught_and_truncation_is_told_apart():
     assert not _printed_code_not_written('{"tool": "write_file", "args": {"path": "a.html"}}\n```html\n<p>\n```', "write a.html")
     assert _looks_truncated('{"tool": "write_file", "args": {"path": "a.html", "content": "<!DOCTYPE')
     assert not _looks_truncated('{"tool": "write_file", "args": {"path": "a.html", "content": "bad \\\' escape"}}')
+
+
+def test_a_bare_value_lands_on_a_one_argument_tool():
+    from seymour.run_executor import _normalize_args, catalog_for, CHAT_POLICY
+    cat = catalog_for(CHAT_POLICY)
+    assert _normalize_args(cat, "read_file", {"input": "a.py"}) == {"path": "a.py"}       # one required arg
+    assert _normalize_args(cat, "edit_lines", {"input": "a.py"}) == {"input": "a.py"}     # several: left alone
+    assert _normalize_args(cat, "read_file", {"path": "b.py"}) == {"path": "b.py"}

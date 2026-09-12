@@ -366,6 +366,7 @@ async def stream_chat_run(
     pages: dict = {}                   # path → last auto-check (files this run wrote)
     repeat_state: dict = {}            # consecutive identical calls (nudges)
     cache_hits: list[float] = []       # per-round prompt-cache hit ratio (llama.cpp reports it)
+    think_retried = False              # the one-shot "budget spent thinking" retry
     request = None
     status = "done"
     try:
@@ -474,6 +475,23 @@ async def stream_chat_run(
                       visible_chars=len(visible) - round_start,
                       withheld=tool_round,
                       stats=dict(request.stats) if request.stats else {})
+            log.last_raw = buffer if tool_round or sniffing else visible[round_start:]
+            # An EMPTY round that spent the whole cap: the budget went into
+            # hidden thinking (measured 2026-09-11: 8,192 tokens, 80 s,
+            # nothing visible, run ended "ran out of room"). The agent loop
+            # learned this on 2026-09-02; the chat run now does the same —
+            # retry once with the hidden channel closed, and keep it closed
+            # for the rest of this run.
+            generated = int((request.stats or {}).get("generated_tokens") or 0)
+            if (not buffer.strip() and not visible[round_start:].strip() and thinking_on
+                    and generated >= int(inf.max_tokens * 0.9) and not think_retried):
+                think_retried = True
+                thinking_on = False
+                inf = inference.current({**(overrides or {}), "thinking": "off"})
+                log.event("note", what="budget spent thinking",
+                          detail=f"{generated} tokens, nothing visible — retrying with thinking off for the rest of the run")
+                yield {"economy": {"what": "thinking_off", "tokens": generated}}
+                continue
             # The cache-hit ledger: every round's ratio, so the run's end
             # can report the mean and the trace can show a miss where it
             # happened (a compaction rewrites the prefix — one miss, expected;
@@ -939,6 +957,20 @@ def _result_content(name: str, result: str, log: "RunLog"):
     return [{"type": "text", "text": text}, *parts]
 
 
+def _normalize_args(catalog: dict, name: str, args: dict) -> dict:
+    """A bare value where an object was expected — {"args": "inv/loader.py"}
+    parses to {"input": "inv/loader.py"} — lands on the tool's single
+    required argument when it has exactly one; a 35B writes this shape
+    for one-argument tools and the retry would only repeat it."""
+    tool = catalog.get(name)
+    if tool is None or not isinstance(args, dict):
+        return args if isinstance(args, dict) else {}
+    required = [a for a in tool.args if a not in tool.optional]
+    if list(args) == ["input"] and len(required) == 1 and required[0] != "input":
+        return {required[0]: args["input"]}
+    return args
+
+
 async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
                    economy: Economy | None = None) -> str:
     """Run one tool through the registry, logging call and result.
@@ -947,8 +979,11 @@ async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
     An oversized result is SPILLED by the economy before it enters the
     prompt (the full text goes to an artifact; the model reads an
     excerpt plus the pointer) — never truncated in silence."""
-    log.event("tool_call", tool=name, args=args)
-    safe_args = args if isinstance(args, dict) else {}
+    safe_args = _normalize_args(catalog, name, args if isinstance(args, dict) else {})
+    # The raw reply the call was parsed from rides on the event (bounded):
+    # when a call arrives with the wrong arguments, the trace must show
+    # what the model actually wrote, or the parser cannot be suspected.
+    log.event("tool_call", tool=name, args=safe_args, raw=(getattr(log, "last_raw", "") or "")[:600])
     path = str(safe_args.get("path") or "") or None
     bus.publish("run", "tool", run_id=log.id, tool=name, path=path,
                 summary=tools.describe_call(catalog[name], safe_args) if name in catalog else name)
