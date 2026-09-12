@@ -1,0 +1,22 @@
+{
+ "prompt": "Make a two-slide sales deck: what happened this quarter, and next steps.",
+ "kind": "deck",
+ "rubric": [
+  "Visual consistency across slides (one palette, one type scale, aligned grid)",
+  "No overflow, no empty placeholders, nothing cut off",
+  "One idea per slide; titles state the point; text is readable at a glance",
+  "The chart (if any) is built from the data, labelled, and readable",
+  "Would a person present this?"
+ ],
+ "artifacts": {
+  "A": {
+   "images": [
+    "A/01.png",
+    "A/02.png",
+    "A/03.png"
+   ],
+   "console": "",
+   "interaction": ""
+  }
+ }
+}

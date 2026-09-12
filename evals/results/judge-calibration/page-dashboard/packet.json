@@ -1,0 +1,24 @@
+{
+ "prompt": "Make a small single-file dashboard page: a header with a live clock, a counter card with a button that increments it, a notes card with a textarea, and an about card. It should look clean and work on a phone too.",
+ "kind": "page",
+ "rubric": [
+  "Layout and visual polish at desktop width (spacing, alignment, colour)",
+  "Holds up on the laptop and phone viewports (no overflow, no unreadable text)",
+  "The interactions asked for visibly work (compare the after-interaction images)",
+  "No console errors; nothing visibly broken",
+  "Would a person use this?"
+ ],
+ "artifacts": {
+  "A": {
+   "images": [
+    "A/01.png",
+    "A/02.png",
+    "A/03.png",
+    "A/04.png",
+    "A/05.png"
+   ],
+   "console": "",
+   "interaction": ""
+  }
+ }
+}

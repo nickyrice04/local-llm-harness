@@ -117,3 +117,44 @@ name from `/api/status` for the report header, and `--dsh-base-url` points
 dsh at the same server Seymour is using (llama-server on 8080, the MLX
 server on 8082), so an MLX run compares both harnesses on identical
 weights and identical serving.
+
+## The second comparison set (2026-09-11)
+
+The seven-task set above retired at 7/7 for both harnesses — a test
+everything passes measures nothing. `evals/compare/tasks.py` is now the
+second set (the first lives on as `tasks_v1.py` for rescoring old
+labels); the architecture is unchanged and the calibration target is
+40–70 % for the current harness:
+
+| task | category | what the checks do |
+|---|---|---|
+| xlsx-messy-cleanup | office | recalculate through LibreOffice; compare every region×month / region / grand aggregate against pandas truth computed from the seeded generator; sheets, live formula count, chart, notes |
+| pptx-from-data | office | 6 slides, a native chart carrying the real numbers, notes on every slide, the computed key numbers, ≤ 4 font sizes, the harness's own overflow/placeholder check |
+| code-bug-across-files | code | tests pass; tests and data untouched; the fix is in loader.py (cause) not report.py (symptom); ≤ 3 changed lines; a second test the tempting wrong fix breaks |
+| code-make-it-fast | code | bench.py untouched; identical checksum; ≥ 5× and ≥ 20× faster than the original (timed by the checker) |
+| html-desktop-os-verified | web | static checks, then Playwright DRIVES the page: start menu, notepad typing, calculator 8/2=4, drag, z-order — scored at 50 / 90 / 100 % of steps |
+| audit-long-horizon | code | hidden acceptance tests per planted bug (search normalisation, days_between sign, add_days off-by-one) plus one that must keep passing; the report names the files; frozen files untouched |
+
+**Seymour's side runs through the chat executor** (`POST /api/chat`),
+the path a person uses: the context economy, the 60-call budget, the
+verifiers and the repair guard. The runner auto-approves writes and
+answers any question with "proceed on your best judgement"; thinking is
+sent on per message (parity with dsh). Each record carries the run's
+peak prompt tokens, compactions, spills and prunes.
+
+**Rendering and the judge.** Every task with a `render` field is turned
+into PNGs by `evals/render/` (pages at three viewports and after each
+interaction step; decks per slide plus a contact sheet; workbooks
+recalculated and rasterized) into `results/compare-<label>/<harness>/<task>/render/`.
+`evals/judge/packet.py --label <label>` builds blind packets (random
+A/B, neutral names, the anchors verbatim); a vision-capable subagent
+judges them OUTSIDE Seymour; `--collect` folds the verdicts back and the
+report shows the judge's 1–10 in its own column, never averaged into
+the machine score. `evals/render/calibration/` holds three hand-scored
+references re-judged every run (`--calibration`, `--drift`).
+
+```bash
+SEYMOUR_BASE=http://127.0.0.1:8000 .venv/bin/python evals/compare/run.py --label v2
+.venv/bin/python evals/judge/packet.py --label v2          # then judge, then:
+.venv/bin/python evals/judge/packet.py --collect --label v2
+```

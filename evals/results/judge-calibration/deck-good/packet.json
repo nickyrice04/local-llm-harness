@@ -1,0 +1,23 @@
+{
+ "prompt": "Make a short sales-review deck from these regional totals (north 1420, south 850, east 580, west 410): a title slide, a slide with a chart of the numbers and the key takeaway, and a slide with three next steps. Add speaker notes.",
+ "kind": "deck",
+ "rubric": [
+  "Visual consistency across slides (one palette, one type scale, aligned grid)",
+  "No overflow, no empty placeholders, nothing cut off",
+  "One idea per slide; titles state the point; text is readable at a glance",
+  "The chart (if any) is built from the data, labelled, and readable",
+  "Would a person present this?"
+ ],
+ "artifacts": {
+  "A": {
+   "images": [
+    "A/01.png",
+    "A/02.png",
+    "A/03.png",
+    "A/04.png"
+   ],
+   "console": "",
+   "interaction": ""
+  }
+ }
+}
