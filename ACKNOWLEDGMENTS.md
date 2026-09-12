@@ -109,6 +109,26 @@ body loaded on demand) follows the Agent Skills convention as Claude
 Code, oh-my-pi and deepseek-harness use it, so a skill written for any
 of them drops into `~/.seymour/skills` unchanged.
 
+## The agency layer (2026-09-11)
+
+The overhaul's tools and economy re-express ideas from the same three
+harnesses, credited here by the package each came from:
+
+- **deepseek-harness**: `packages/spill` (oversized results to a file,
+  head/tail excerpt with a locator), `packages/compaction` (the tool-
+  pairing balance check — a call is never split from its result),
+  `packages/todo` (the plan kept by the harness), `packages/jobs`
+  (background jobs with consuming reads), `tool-bash-persistent` (one
+  shell per session), `tool-fs-search` (glob), `tool-ask-user`, and its
+  terminal / diff / search cards in the chat.
+- **oh-my-pi**: the pruning ruleset in `packages/coding-agent` (elide
+  uneventful results, blank superseded reads), the `task` batch contract
+  (`# Target / # Change / # Acceptance`, a bounded summary plus the
+  full artifact), and the git tools. Its `snapcompact` was read and
+  deliberately not followed.
+- **Odysseus**: the guarded subprocess pattern the persistent shell and
+  jobs still run under.
+
 ## llama.cpp
 
 [llama.cpp](https://github.com/ggml-org/llama.cpp) provides the entire

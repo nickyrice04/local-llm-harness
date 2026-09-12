@@ -188,6 +188,39 @@ export function show(container: HTMLElement): ViewHandle {
     card.scrollIntoView({ block: "end" });
   }
 
+  /** The live question card (ask_user_question), while one is pending. */
+  let questionCard: HTMLElement | null = null;
+
+  /** Seymour asks ONE question, in the thread: options as buttons, or a
+   *  free-text answer. The run waits (bounded) for the reply. */
+  function askQuestion(q: { run_id: string; question: string; options?: string[] }): void {
+    clearHero();
+    questionCard?.remove();
+    const reply = async (text: string) => {
+      questionCard?.remove();
+      questionCard = null;
+      row("user", text || "(skipped)");
+      try {
+        await post(`/api/runs/${q.run_id}/answer`, { answer: text });
+      } catch { /* the question timed out or the run moved on */ }
+    };
+    const free = el("input", { placeholder: "your answer…", autocomplete: "off" }) as HTMLInputElement;
+    free.style.flex = "1";
+    const form = el("form.row", { onsubmit: (ev: Event) => { ev.preventDefault(); void reply(free.value.trim()); } },
+      free, el("button.primary", {}, "Answer"), el("button", { type: "button", onclick: () => void reply("") }, "Skip"));
+    const card = el("div.sys-note.approval", {},
+      el("div", {}, `Seymour asks: ${q.question}`),
+      (q.options ?? []).length
+        ? el("div.approval-actions", {}, ...(q.options ?? []).map((o) =>
+            el("button", { type: "button", onclick: () => void reply(o) }, o)))
+        : null,
+      form);
+    questionCard = card;
+    log.append(card);
+    card.scrollIntoView({ block: "end" });
+    free.focus();
+  }
+
   /** The run answered (or timed out): the card's job is done. */
   function resolveApproval(allowed: boolean): void {
     approvalCard?.remove();
@@ -641,6 +674,9 @@ export function show(container: HTMLElement): ViewHandle {
         if (frame.approval) askApproval(frame.approval);
         // Answered (by these buttons or by timeout): retire the card.
         if (frame.approved !== undefined) resolveApproval(frame.approved);
+        // A question for the person (ask_user_question), and its closure.
+        if (frame.question) askQuestion(frame.question);
+        if (frame.answered) { questionCard?.remove(); questionCard = null; }
         // A mid-prose tool call was trimmed server-side: the trimmed
         // text replaces the source outright.
         if (frame.replace !== undefined) {

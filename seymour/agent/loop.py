@@ -348,8 +348,16 @@ async def run_step(task_id: str, tier: Tier = Tier.BACKGROUND_AGENT,
     # Registry tools act on the world. The unattended agent is NOT asked
     # before writes or commands: the workspace sandbox (path confinement
     # + sandbox-exec for run_command) is its permission boundary, and
-    # anything beyond it must go through ask_user.
-    result = await tools.execute(name, args)
+    # anything beyond it must go through ask_user. The call runs in the
+    # task's scope (tools.context): its own plan, its own shell session,
+    # and — for a subagent child — a depth that forbids grandchildren.
+    from seymour.tools import context as tool_context
+    child = task.goal.startswith("# Target")          # a subagent's contract (tools/subagent.py)
+    tokens = tool_context.scope(task_id, 1 if child else 0)
+    try:
+        result = await tools.execute(name, args)
+    finally:
+        tool_context.unscope(tokens)
     # An oversized result is spilled to an artifact and excerpted — the
     # same economy the chat run uses; the journal keeps the excerpt and
     # the pointer, never a silent cut.

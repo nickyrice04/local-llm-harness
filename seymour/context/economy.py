@@ -73,7 +73,8 @@ class Economy:
                  on_event: Callable[..., None] | None = None, run_id: str = "",
                  keep_recent_pairs: int = KEEP_RECENT_PAIRS,
                  prune_at: float = PRUNE_AT, compact_at: float = COMPACT_AT,
-                 inline_chars: int = _spill.INLINE_CHARS) -> None:
+                 inline_chars: int = _spill.INLINE_CHARS,
+                 extra_state: Callable[[], str] | None = None) -> None:
         self.context_tokens = int(context_tokens or FALLBACK_CONTEXT_TOKENS)
         self.reply_tokens = int(reply_tokens)
         self._summarize = summarize
@@ -82,6 +83,10 @@ class Economy:
         self.keep = keep_recent_pairs
         self.prune_at, self.compact_at = prune_at, compact_at
         self.inline_chars = inline_chars
+        # Harness-owned state the summary block re-states VERBATIM (the
+        # run's todo plan): it is exact, so it never goes through the
+        # summarizer.
+        self._extra_state = extra_state
         self.request_text = ""
         # The running tally the run_end event reports.
         self.stats = {"spills": 0, "spilled_chars": 0, "prunes": 0, "pruned_chars": 0,
@@ -174,6 +179,10 @@ class Economy:
         if not summary or len(summary) < 40:
             method = "mechanical"
             summary = _compact.mechanical_summary(convo, start, end)
+        if self._extra_state is not None:
+            extra = (self._extra_state() or "").strip()
+            if extra:
+                summary += "\n\n## Current plan (todo_write, kept by the harness — exact)\n" + extra
         new = _compact.splice(convo, start, end, summary, method)
         after = estimate_tokens(new)
         self.stats["compactions"] += 1

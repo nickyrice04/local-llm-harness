@@ -118,6 +118,9 @@ async def lifespan(app: FastAPI):
     from seymour import mcp
     await mcp.manager.shutdown()          # child servers stop with us
     await live_runs.shutdown()            # detached chat runs stop; partial replies persist
+    from seymour.tools import jobs, shell as shell_tools
+    await jobs.kill_all()                 # background jobs (servers, builds) die with the app
+    await shell_tools.close_all_shells()  # persistent shell sessions too
     await discrete.shutdown()             # discrete jobs re-pause next boot
     await runtime.agent.shutdown()        # checkpoint stands; task resumes next boot
     if llama_embedder is not None:

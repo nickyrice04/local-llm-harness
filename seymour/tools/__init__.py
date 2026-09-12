@@ -7,11 +7,20 @@ here, not a policy — there is exactly one catalog to add a tool to.
 
 Layout (one module per family, each readable on its own):
 
-    paths.py    workspace confinement — the sandbox every file tool obeys
-    files.py    read / write / edit / patch / list / grep, line-addressed
-    shell.py    run_command: real confinement via macOS sandbox-exec
-    web.py      search providers + guarded fetch + readable extraction
-    memory.py   remember_fact
+    paths.py      workspace confinement — the sandbox every file tool obeys
+    files.py      read / write / edit / patch / list / grep, line-addressed
+    structure.py  glob (the file finder) and read_structure (a file's shape)
+    shell.py      run_command (one-shot) and shell (a persistent session),
+                  both under macOS sandbox-exec
+    jobs.py       run_in_background / job_output / job_kill
+    web.py        search providers + guarded fetch + readable extraction
+    memory.py     remember_fact
+    todo.py       todo_write — the plan, kept by the harness
+    ask.py        ask_user_question — one question, in the thread
+    images.py     read_image — for a model that can see
+    git.py        git_overview / git_file_diff / git_hunk
+    subagent.py   task / tasks — child runs with a blank context
+    context.py    the run scope tools read (which run, side channels)
 
 Design rules (the tier taxonomy is oh-my-pi's; the guards are dsh's and
 Odysseus's — see ACKNOWLEDGMENTS.md):
@@ -86,11 +95,14 @@ def describe_call(tool: Tool, args: dict) -> str:
 #  The registry (assembled from the family modules)                           #
 # --------------------------------------------------------------------------- #
 
-from seymour.tools import files, memory, probe, shell, skills_tool, web  # noqa: E402  (after Tool)
+from seymour.tools import (  # noqa: E402  (after Tool)
+    ask, files, git, images, jobs, memory, probe, shell, skills_tool, structure, subagent, todo, web)
 
 TOOLS: dict[str, Tool] = {
     tool.name: tool
-    for tool in [*web.TOOLS, *files.TOOLS, *shell.TOOLS, *memory.TOOLS, *skills_tool.TOOLS, *probe.TOOLS]
+    for tool in [*web.TOOLS, *files.TOOLS, *structure.TOOLS, *shell.TOOLS, *jobs.TOOLS, *memory.TOOLS,
+                 *skills_tool.TOOLS, *probe.TOOLS, *todo.TOOLS, *ask.TOOLS, *images.TOOLS, *git.TOOLS,
+                 *subagent.TOOLS]
 }
 
 
@@ -342,7 +354,15 @@ def _coerce(tool: Tool, args: dict) -> dict:
     for key in tool.args:
         if key in args and args[key] is not None:
             value = args[key]
-            call_args[key] = value if isinstance(value, (bool, int)) else str(value)
+            if isinstance(value, (bool, int)):
+                call_args[key] = value
+            elif isinstance(value, (list, dict)):
+                # A structured argument (todo_write's list, tasks' batch)
+                # travels as JSON text — str() would give Python repr,
+                # which the tool could not parse back.
+                call_args[key] = json.dumps(value, ensure_ascii=False)
+            else:
+                call_args[key] = str(value)
         elif key not in tool.optional:
             call_args[key] = ""
     return call_args

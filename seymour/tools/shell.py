@@ -274,3 +274,175 @@ TOOLS = [
         describe=_describe,
     ),
 ]
+
+
+# --------------------------------------------------------------------------- #
+#  The persistent shell                                                        #
+# --------------------------------------------------------------------------- #
+# run_command is one-shot: `cd`, exported variables and an activated venv
+# do not survive to the next call, and a model that types `cd app` then
+# `pytest` is confused by the result. `shell` keeps ONE /bin/sh per run
+# alive under the same sandbox profile (dsh's tool-bash-persistent):
+# each command is written to its stdin followed by a sentinel line that
+# carries the exit code, and the tool reads until the sentinel. State
+# persists; confinement persists (the profile wraps the shell itself).
+# The session ends with the run, on an idle timeout, or on a timeout
+# that had to kill it (a hung command takes its shell with it — a new
+# one starts on the next call, and the result says so).
+
+import contextlib as _contextlib
+from seymour.tools import context as _context
+
+SHELL_IDLE_S = 900.0          # an untouched session closes after this
+SHELL_DEFAULT_TIMEOUT_S = 120
+SHELL_MAX_TIMEOUT_S = 600
+
+
+@dataclass
+class ShellSession:
+    proc: asyncio.subprocess.Process
+    profile_path: Path | None
+    last_used: float
+    lock: asyncio.Lock
+    run: str
+    sandboxed: bool
+
+
+_sessions: dict[str, ShellSession] = {}
+
+
+async def _open_session(run: str) -> ShellSession:
+    workspace = paths.workspace()
+    argv = ["/bin/sh"]
+    profile_path: Path | None = None
+    sandboxed = bool(SANDBOX_EXEC)
+    if sandboxed:
+        profile_path = paths.scratch_dir() / f"shell-profile-{uuid.uuid4().hex[:8]}.sb"
+        profile_path.write_text(_profile_text(workspace), encoding="utf-8")
+        argv = [SANDBOX_EXEC, "-f", str(profile_path), *argv]
+    proc = await asyncio.create_subprocess_exec(
+        *argv, cwd=str(workspace), env=_child_env(workspace),
+        stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT, start_new_session=True)
+    session = ShellSession(proc=proc, profile_path=profile_path, last_used=time.monotonic(),
+                           lock=asyncio.Lock(), run=run, sandboxed=sandboxed)
+    _sessions[run] = session
+    return session
+
+
+async def _close_session(run: str) -> None:
+    session = _sessions.pop(run, None)
+    if session is None:
+        return
+    if session.proc.returncode is None:
+        _kill_group(session.proc)
+        with _contextlib.suppress(Exception):
+            await asyncio.wait_for(session.proc.wait(), timeout=3)
+    if session.profile_path:
+        session.profile_path.unlink(missing_ok=True)
+
+
+async def close_all_shells(run: str | None = None) -> int:
+    """End every session (of one run, or all): run end, app shutdown."""
+    targets = [r for r in list(_sessions) if run is None or r == run]
+    for r in targets:
+        await _close_session(r)
+    return len(targets)
+
+
+async def shell_exec(command: str, timeout_s: int = SHELL_DEFAULT_TIMEOUT_S) -> tuple[ExecResult, bool]:
+    """Run `command` in the calling run's persistent shell. Returns the
+    result and whether a fresh session had to be started."""
+    run = _context.run_id.get() or "default"
+    fresh = False
+    session = _sessions.get(run)
+    if session is None or session.proc.returncode is not None or time.monotonic() - session.last_used > SHELL_IDLE_S:
+        await _close_session(run)
+        session = await _open_session(run)
+        fresh = True
+    async with session.lock:
+        session.last_used = time.monotonic()
+        marker = f"__SEYMOUR_DONE_{uuid.uuid4().hex[:10]}__"
+        assert session.proc.stdin is not None and session.proc.stdout is not None
+        # The command in its own group so a wrapper `{ ...; }` keeps the
+        # shell's state (cd/export inside it still apply — it is not a
+        # subshell), then the sentinel with the command's exit code.
+        script = f"{command}\nprintf '\\n{marker} %s\\n' \"$?\"\n"
+        started = time.monotonic()
+        session.proc.stdin.write(script.encode("utf-8"))
+        await session.proc.stdin.drain()
+        chunks: list[bytes] = []
+        captured = 0
+        timed_out = False
+        exit_code: int | None = None
+        deadline = started + timeout_s
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                timed_out = True
+                break
+            try:
+                line = await asyncio.wait_for(session.proc.stdout.readline(), timeout=remaining)
+            except asyncio.TimeoutError:
+                timed_out = True
+                break
+            if not line:                                    # the shell died
+                break
+            text = line.decode("utf-8", errors="replace")
+            if text.startswith(marker):
+                with _contextlib.suppress(ValueError):
+                    exit_code = int(text[len(marker):].strip() or "0")
+                break
+            if captured < MAX_CAPTURE_BYTES:
+                chunks.append(line[: MAX_CAPTURE_BYTES - captured])
+            captured += len(line)
+        if timed_out:
+            # A hung command cannot be separated from its shell: kill the
+            # session; the next call starts a fresh one and says so.
+            await _close_session(run)
+        seconds = round(time.monotonic() - started, 2)
+        text = b"".join(chunks).decode("utf-8", errors="replace")
+        if text.endswith("\n"):
+            text = text[:-1]
+        shown, truncated, spill = _bound_output(text)
+        return ExecResult(output=shown, exit_code=exit_code, timed_out=timed_out, seconds=seconds,
+                          truncated=truncated, spill_path=spill, sandboxed=session.sandboxed), fresh
+
+
+async def shell(command: str, timeout_s: str | int = "") -> str:
+    """Tool entry: run a command in the run's persistent shell."""
+    command = (command or "").strip()
+    if not command:
+        return "Error: shell needs a command"
+    if len(command) > 20000:
+        return "Error: that command is too long — write it to a file and run the file."
+    try:
+        timeout = max(1, min(int(str(timeout_s).strip() or SHELL_DEFAULT_TIMEOUT_S), SHELL_MAX_TIMEOUT_S))
+    except ValueError:
+        timeout = SHELL_DEFAULT_TIMEOUT_S
+    result, fresh = await shell_exec(command, timeout)
+    text = render(result)
+    if result.timed_out:
+        text += "\n[the shell session was ended by the timeout; the next shell call starts a fresh one (cwd and variables reset)]"
+    elif fresh:
+        text = "[new shell session — cwd is the workspace]\n" + text
+    return text
+
+
+def _d_shell(args: dict) -> str:
+    first = str(args.get("command", "")).strip().splitlines()
+    first = first[0] if first else "a command"
+    return f"run `{first[:80]}{'…' if len(first) > 80 else ''}` in the persistent shell"
+
+
+TOOLS.append(Tool(
+    name="shell",
+    description=("Run a command in a PERSISTENT shell session: cd, exported variables and an "
+                 "activated venv carry over to your next shell call (run_command forgets them). "
+                 "Same sandbox: workspace writes only, no network. Use it for multi-step "
+                 "sessions; run_command for one-offs."),
+    args={"command": "the shell command to run",
+          "timeout_s": f"seconds before it is killed (default {SHELL_DEFAULT_TIMEOUT_S}, max {SHELL_MAX_TIMEOUT_S})"},
+    optional=frozenset({"timeout_s"}),
+    tier="exec", func=shell, describe=_d_shell,
+))

@@ -27,6 +27,7 @@ from dataclasses import dataclass
 
 from seymour import inference, runtime, tools
 from seymour.context import Economy, estimate_tokens, strip as strip_meta
+from seymour.tools import context as tool_context, todo as todo_tool
 from seymour.events import bus
 from seymour.db import ChatSession, Message, Run, RunEvent, SessionLocal, utcnow
 from seymour.engine.adapter import GenerationRequest
@@ -108,6 +109,23 @@ def decide(run_id: str, allow: bool) -> bool:
         return False
     event, decision = waiting
     decision["allow"] = allow
+    event.set()
+    return True
+
+
+# Runs waiting on an ANSWER (ask_user_question): run_id → (event, box).
+# Same shape as the approval gate; a different question.
+_questions: dict[str, tuple[asyncio.Event, dict]] = {}
+
+
+def answer(run_id: str, text: str) -> bool:
+    """Deliver the person's answer to a run's pending question (the
+    route). False when no question was waiting."""
+    waiting = _questions.get(run_id)
+    if waiting is None:
+        return False
+    event, box = waiting
+    box["answer"] = text
     event.set()
     return True
 
@@ -317,8 +335,27 @@ async def stream_chat_run(
     economy = Economy(
         context_tokens=getattr(runtime.caps, "context_per_slot", None),
         reply_tokens=inf.max_tokens, summarize=summarize,
-        on_event=log.event, run_id=log.id)
+        on_event=log.event, run_id=log.id,
+        # The plan (todo_write) rides into every compaction block verbatim.
+        extra_state=lambda: todo_tool.render(todo_tool.current(log.id)) if todo_tool.current(log.id) else "")
     convo = economy.tag_base(base_messages)
+    # Questions from ask_user_question reach the person through this
+    # run's frames; the answer comes back through the /answer route.
+    question_frames: list[dict] = []          # drained into the stream by the loop below
+
+    async def ask_person(question: dict) -> str:
+        event = asyncio.Event()
+        box: dict = {"answer": ""}
+        _questions[log.id] = (event, box)
+        log.event("note", what="question asked", question=question.get("question"), options=question.get("options"))
+        question_frames.append({"question": {"run_id": log.id, **question}})
+        try:
+            await event.wait()
+        finally:
+            _questions.pop(log.id, None)
+        log.event("note", what="question answered", answer=box["answer"][:500])
+        question_frames.append({"answered": True})
+        return box["answer"]
     tool_calls = 0                     # executed tools (the real budget)
     rounds = 0                         # model calls (belt + braces)
     writes_allowed = False             # the once-per-run grant (below)
@@ -544,13 +581,19 @@ async def stream_chat_run(
                     continue
                 yield {"tool": {"name": name, "args": args,
                                 "summary": _describe(catalog, name, args)}}
-                result = await _execute(log, catalog, name, args, economy)
+                async for frame in _execute_streaming(log, catalog, name, args, economy, ask_person, question_frames):
+                    if "result" in frame:
+                        result = frame["result"]
+                    else:
+                        yield frame
                 yield _tool_result_frame(name, args, result, log)
+                for frame in _side_frames(log, name):
+                    yield frame
                 _track_page(pages, name, args, log)
                 result += _repeat_note(repeat_state, name, args)
                 convo = convo + economy.pair(
                     round_text, name, args,
-                    untrusted_block(f"{name} result", result) + _SYNTHESIZE_NOW,
+                    _result_content(name, result, log),
                     ok=not tools.is_error(name, result), spill=log.last_spill)
                 continue
 
@@ -647,13 +690,19 @@ async def stream_chat_run(
                 continue
             yield {"tool": {"name": name, "args": args,
                             "summary": _describe(catalog, name, args)}}
-            result = await _execute(log, catalog, name, args, economy)
+            async for frame in _execute_streaming(log, catalog, name, args, economy, ask_person, question_frames):
+                if "result" in frame:
+                    result = frame["result"]
+                else:
+                    yield frame
             yield _tool_result_frame(name, args, result, log)
+            for frame in _side_frames(log, name):
+                yield frame
             _track_page(pages, name, args, log)
             result += _repeat_note(repeat_state, name, args)
             convo = convo + economy.pair(
                 buffer, name, args,
-                untrusted_block(f"{name} result", result) + _SYNTHESIZE_NOW,
+                _result_content(name, result, log),
                 ok=not tools.is_error(name, result), spill=log.last_spill)
 
         # A run that ended with NOTHING visible must say so — a silent
@@ -717,6 +766,15 @@ async def stream_chat_run(
                   traceback=traceback.format_exc())
         yield {"error": "generation failed"}
     finally:
+        # The run's tool-side state goes with it: its plan, its shell
+        # session, any question still waiting.
+        todo_tool.forget(log.id)
+        _questions.pop(log.id, None)
+        try:
+            from seymour.tools import shell as shell_tools
+            await shell_tools.close_all_shells(log.id)
+        except Exception:
+            pass
         # Persist whatever was generated — a partial reply beats none —
         # and close the run's ledger. Synchronous (the WAL rule).
         if visible:
@@ -825,6 +883,48 @@ def _describe(catalog: dict, name: str, args: dict) -> str:
     return tools.describe_call(tool, args if isinstance(args, dict) else {})
 
 
+async def _execute_streaming(log: "RunLog", catalog: dict, name: str, args: dict, economy: Economy,
+                             ask_person, question_frames: list[dict]):
+    """_execute, but able to yield frames WHILE the tool runs — a question
+    card for ask_user_question, its answered marker — then the result as
+    {"result": text}. The tool runs as a task; frames queued by the asker
+    are relayed as they appear."""
+    tokens = tool_context.scope(log.id, 0)
+    tool_context.set_asker(ask_person)
+    try:
+        job = asyncio.create_task(_execute(log, catalog, name, args, economy))
+        while not job.done():
+            while question_frames:
+                yield question_frames.pop(0)
+            await asyncio.wait({job}, timeout=0.2)
+        while question_frames:
+            yield question_frames.pop(0)
+        yield {"result": job.result()}
+    finally:
+        tool_context.set_asker(None)
+        tool_context.unscope(tokens)
+
+
+def _side_frames(log: "RunLog", name: str) -> list[dict]:
+    """Frames a tool's run produces for the chat besides its result: the
+    plan after todo_write."""
+    if name == "todo_write":
+        items = todo_tool.current(log.id)
+        log.event("todo", items=items)
+        return [{"todos": items}]
+    return []
+
+
+def _result_content(name: str, result: str, log: "RunLog"):
+    """The result message's content: guard-wrapped text, or — when the
+    tool attached an image (read_image) — a content array carrying it."""
+    text = untrusted_block(f"{name} result", result) + _SYNTHESIZE_NOW
+    parts = getattr(log, "last_attachments", None) or []
+    if not parts:
+        return text
+    return [{"type": "text", "text": text}, *parts]
+
+
 async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
                    economy: Economy | None = None) -> str:
     """Run one tool through the registry, logging call and result.
@@ -844,6 +944,8 @@ async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
     # region). Bounded, best effort, never a reason for the call to fail.
     before_text = _snapshot(path) if name in _DIFFED else None
     result = await tools.execute(name, safe_args)
+    # What the tool attached for the next message (read_image), if anything.
+    log.last_attachments = tool_context.take_attachments()
     ok = not tools.is_error(name, result)
     log.last_diff = _diff_of(path, before_text) if before_text is not None and ok else None
     log.last_spill = None

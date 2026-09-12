@@ -88,6 +88,23 @@ async def approve(run_id: str, body: Decision):
     return {"answered": True, "allow": body.allow}
 
 
+class Answer(BaseModel):
+    """The person's answer to a run's ask_user_question."""
+
+    answer: str
+
+
+@router.post("/{run_id}/answer")
+async def answer_question(run_id: str, body: Answer):
+    """Answer a run's pending question (the inline question card). A
+    stale answer — the question timed out or the run moved on — is
+    reported plainly, never treated as an error."""
+    from seymour.run_executor import answer as deliver
+    if not deliver(run_id, body.answer):
+        return {"answered": False, "note": "no question is waiting on that run"}
+    return {"answered": True}
+
+
 @router.post("/{run_id}/cancel")
 async def cancel_run(run_id: str):
     """Stop a live chat run — the EXPLICIT stop (a closed tab is not one
