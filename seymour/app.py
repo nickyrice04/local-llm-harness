@@ -55,7 +55,6 @@ logging.basicConfig(
 logger = logging.getLogger("seymour")
 
 
-@asynccontextmanager
 async def _measure_profile(engine, caps):
     """engine/profile.measure with the chat system prompt as the text to
     cost; never lets a probe failure block boot."""
@@ -71,6 +70,7 @@ async def _measure_profile(engine, caps):
         return profile.assumed(caps, "")
 
 
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup above the yield, shutdown below — visible symmetry:
     anything started above is stopped below."""
