@@ -312,10 +312,11 @@ XLSX_TASK = Task(
         xlsx_aggregates_match("orders_clean.xlsx", 0.5),
         xlsx_aggregates_match("orders_clean.xlsx", 1.0),
         xlsx_has("orders_clean.xlsx", "has a chart", lambda wb: (_has_chart(wb), "chart objects found" if _has_chart(wb) else "none")),
-        xlsx_has("orders_clean.xlsx", "Notes mentions duplicates and the removed count",
-                 lambda wb: (any("duplic" in str(c.value).lower() and any(ch.isdigit() for ch in str(c.value))
-                                 for sh in wb.worksheets if sh.title.lower() == "notes" for row in sh.iter_rows() for c in row if c.value),
-                             "looked for 'duplic' + a number on Notes")),
+        xlsx_has("orders_clean.xlsx", "Notes mentions duplicates and a removed count",
+                 lambda wb: ((lambda cells: any("duplic" in c for c in cells) and any(any(ch.isdigit() for ch in c) for c in cells))(
+                                 [str(c.value).lower() for sh in wb.worksheets if sh.title.lower() == "notes"
+                                  for row in sh.iter_rows() for c in row if c.value]),
+                             "looked for 'duplic' and a number anywhere on Notes")),
     ],
     artifacts=["orders_clean.xlsx"],
     render={"kind": "workbook", "artifact": "orders_clean.xlsx"},
