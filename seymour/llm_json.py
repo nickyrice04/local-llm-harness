@@ -110,11 +110,22 @@ def parse_json_object(text: str) -> dict | None:
 _BAD_ESCAPE = re.compile(r'\\(?!["\\/bfnrtu])')
 
 
+# The escapes CODE inside a JSON string produces: a regex's \d, \s, \w,
+# \., \( … — the model meant a literal backslash and wrote one. Dropping
+# it (the old repair) silently turned r"\d+" into "d+"; doubling keeps
+# the code's meaning. \' alone means a quote (a Python habit), so that one
+# is dropped (measured 2026-09-11 on a write_file carrying a regex).
+_QUOTE_ESCAPE = re.compile(r"\\'")
+
+
 def _loads_lenient(candidate: str) -> dict | None:
-    """json.loads with the two forgivenesses local models need: raw
-    control characters inside strings (strict=False) and invalid escapes
-    such as \' — never any change to what the text MEANS."""
-    for attempt in (candidate, _BAD_ESCAPE.sub("", candidate)):
+    """json.loads with the forgivenesses local models need: raw control
+    characters inside strings (strict=False), \' for a quote, and code's
+    own backslashes kept as backslashes — never any change to what the
+    text MEANS. The old drop-every-bad-escape repair stays as the last
+    resort, because a parse that lands is better than none."""
+    doubled = _BAD_ESCAPE.sub(r"\\\\", _QUOTE_ESCAPE.sub("'", candidate))
+    for attempt in (candidate, doubled, _BAD_ESCAPE.sub("", candidate)):
         try:
             return json.loads(attempt, strict=False)
         except json.JSONDecodeError:

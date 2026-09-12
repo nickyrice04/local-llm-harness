@@ -47,3 +47,23 @@ def test_a_bare_value_lands_on_a_one_argument_tool():
     assert _normalize_args(cat, "read_file", {"input": "a.py"}) == {"path": "a.py"}       # one required arg
     assert _normalize_args(cat, "edit_lines", {"input": "a.py"}) == {"input": "a.py"}     # several: left alone
     assert _normalize_args(cat, "read_file", {"path": "b.py"}) == {"path": "b.py"}
+
+
+def test_a_fence_only_reply_is_the_content_of_a_pending_write_and_failed_writes_are_not_pages():
+    from seymour.run_executor import _fence_only, _pending_write_after, _track_page
+    body = "import pandas as pd\nprint('hi')"
+    assert _fence_only(f"```python\n{body}\n```") == body
+    assert _fence_only(f"Here is the file:\n```python\n{body}\n```\nRun it with python clean.py") == body
+    assert _fence_only("prose only") is None
+    assert _fence_only('{"tool": "write_file", "args": {"path": "a.py"}}\n```python\nx\n```') is None   # a real call: the call path
+    assert _fence_only("```a\nx\n```\n```b\ny\n```") is None                                          # two blocks: ambiguous
+    pending = _pending_write_after("write_file", {"path": "clean.py", "content": ""},
+                                   "Error: write_file got no content — nothing was written.")
+    assert pending == {"tool": "write_file", "args": {"path": "clean.py"}}
+    assert _pending_write_after("write_file", {"path": "a"}, "[a#1234] written") is None
+    class Log: last_check = None
+    pages: dict = {}
+    _track_page(pages, "write_file", {"path": "clean.py"}, Log(), ok=False)
+    assert pages == {}                                                                                 # nothing was written
+    _track_page(pages, "write_file", {"path": "clean.py"}, Log(), ok=True)
+    assert "clean.py" in pages

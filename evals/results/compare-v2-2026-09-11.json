@@ -1,0 +1,73 @@
+{
+ "label": "v2",
+ "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+ "records": [
+  {
+   "harness": "seymour",
+   "task": "xlsx-messy-cleanup",
+   "category": "office",
+   "status": "done",
+   "seconds": 125.1,
+   "score": 0.0,
+   "tool_calls": 3,
+   "checks": [
+    {
+     "name": "orders_clean.xlsx exists",
+     "ok": false,
+     "detail": "orders_clean.xlsx"
+    },
+    {
+     "name": "orders_clean.xlsx: three sheets incl. Data, Summary, Notes",
+     "ok": false,
+     "detail": "orders_clean.xlsx missing"
+    },
+    {
+     "name": "orders_clean.xlsx: Data has exactly 48 cleaned rows",
+     "ok": false,
+     "detail": "orders_clean.xlsx missing"
+    },
+    {
+     "name": "orders_clean.xlsx: Summary uses \u2265 12 live formulas",
+     "ok": false,
+     "detail": "orders_clean.xlsx missing"
+    },
+    {
+     "name": "orders_clean.xlsx: \u226550% of region\u00d7month/region/grand aggregates match pandas truth after recalc",
+     "ok": false,
+     "detail": "could not recalculate (missing file or soffice failure)"
+    },
+    {
+     "name": "orders_clean.xlsx: \u2265100% of region\u00d7month/region/grand aggregates match pandas truth after recalc",
+     "ok": false,
+     "detail": "could not recalculate (missing file or soffice failure)"
+    },
+    {
+     "name": "orders_clean.xlsx: has a chart",
+     "ok": false,
+     "detail": "orders_clean.xlsx missing"
+    },
+    {
+     "name": "orders_clean.xlsx: Notes mentions duplicates and the removed count",
+     "ok": false,
+     "detail": "orders_clean.xlsx missing"
+    }
+   ],
+   "artifacts": [],
+   "runtime": "",
+   "final": "```python\nimport pandas as pd\nimport numpy as np\nimport re\nfrom openpyxl import Workbook\nfrom openpyxl.chart import BarChart, Reference\nfrom openpyxl.utils import get_column_letter\n\n# ---------------------------------------------------------------------------\n# 1.  Read and clean the CSV\n# ---------------------------------------------------------------------------\ndf = pd.read_csv(\"orders.csv\", dt",
+   "run_id": "234db5a8-5201-498b-b9ff-c2d0713f600b",
+   "session_id": "218ba043-3396-49e9-96e1-50c4fdc54b8e",
+   "peak_prompt_tokens": 7890,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {
+    "images": 0,
+    "notes": [
+     "orders_clean.xlsx does not exist"
+    ],
+    "interaction_ok": null
+   }
+  }
+ ]
+}

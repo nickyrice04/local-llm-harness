@@ -129,3 +129,12 @@ async def test_memory_store_roundtrip_and_retrieval():
     for memory in list_memories():
         assert delete_memory(memory["id"])
     assert list_memories() == []
+
+
+def test_code_backslashes_inside_a_json_string_keep_their_meaning():
+    """A write_file carrying a regex: \\d must stay \\d (doubled for JSON),
+    \\' becomes ', and the object still parses."""
+    raw = '{"tool": "write_file", "args": {"path": "x.py", "content": "import re\\nm = re.search(r\\"\\d+\\", s)\\nq = \\\'a\\\'"}}'
+    parsed = parse_json_object(raw)
+    assert parsed is not None
+    assert parsed["args"]["content"] == 'import re\nm = re.search(r"\\d+", s)\nq = \'a\''

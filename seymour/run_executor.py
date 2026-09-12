@@ -250,6 +250,27 @@ _INTENT = re.compile(
 _FILE_REQUEST = re.compile(r"\b[\w.-]+\.(?:html?|py|js|css|json|md|txt|csv)\b|\b(?:html|file)\b", re.IGNORECASE)
 
 
+def _pending_write_after(name: str, args: dict, result: str) -> dict | None:
+    """After a call: is there a write waiting for its content? (write_file /
+    append_file refused for lack of content — the model may send the
+    fenced file in its next reply.)"""
+    if name in ("write_file", "append_file") and result.startswith("Error:") and "no content" in result:
+        return {"tool": name, "args": {k: v for k, v in (args or {}).items() if k != "content"}}
+    return None
+
+
+_FENCE_ONLY = re.compile(r"^\s*(?:[^\n`]{0,200}\n)?```[A-Za-z0-9_+-]*[ \t]*\r?\n(.*?)\r?\n```\s*(?:[^\n`]{0,300})?\s*$", re.DOTALL)
+
+
+def _fence_only(text: str) -> str | None:
+    """A reply that is one fenced block (a line of prose before or after
+    it allowed) — its body; None otherwise."""
+    if not text or text.count("```") != 2 or _CALL_OPENS.search(text):
+        return None
+    match = _FENCE_ONLY.match(text)
+    return match.group(1) if match and match.group(1).strip() else None
+
+
 def _looks_truncated(buffer: str) -> bool:
     """A call the cap cut off never closed its object (or its fence)."""
     tail = buffer.rstrip()
@@ -374,6 +395,7 @@ async def stream_chat_run(
     repeat_state: dict = {}            # consecutive identical calls (nudges)
     cache_hits: list[float] = []       # per-round prompt-cache hit ratio (llama.cpp reports it)
     think_retried = False              # the one-shot "budget spent thinking" retry
+    pending_write: dict | None = None  # a write_file/append_file that arrived without content
     request = None
     status = "done"
     try:
@@ -536,6 +558,32 @@ async def stream_chat_run(
                             tail_call = candidate
                 if tail_call is None:
                     round_text = visible[round_start:]
+                    body = _fence_only(round_text)
+                    if pending_write and body and tool_calls < policy.max_tool_calls:
+                        # The two-reply protocol a 35B falls into (measured
+                        # 2026-09-11): the call in one reply, the fenced file
+                        # in the next. The fence IS the content of the
+                        # pending write — execute it instead of nudging.
+                        name = pending_write["tool"]
+                        args = {**pending_write["args"], "content": body}
+                        log.event("note", what="fence-only reply completed the pending write",
+                                  tool=name, path=args.get("path"), chars=len(body))
+                        pending_write = None
+                        tool_calls += 1
+                        visible = visible[:round_start].rstrip() + ("\n\n" if round_start else "")
+                        yield {"replace": visible}
+                        yield {"tool": {"name": name, "args": args, "summary": _describe(catalog, name, args)}}
+                        async for frame in _execute_streaming(log, catalog, name, args, economy, ask_person, question_frames):
+                            if "result" in frame:
+                                result = frame["result"]
+                            else:
+                                yield frame
+                        yield _tool_result_frame(name, args, result, log)
+                        _track_page(pages, name, args, log, ok=not tools.is_error(name, result))
+                        convo = convo + economy.pair(
+                            round_text, name, args, _result_content(name, result, log),
+                            ok=not tools.is_error(name, result), spill=log.last_spill)
+                        continue
                     failing = _failing_pages(pages)
                     if failing and repair_rounds < MAX_REPAIR_ROUNDS and tool_calls < policy.max_tool_calls:
                         # "A final, known working product": the model is
@@ -621,7 +669,8 @@ async def stream_chat_run(
                 yield _tool_result_frame(name, args, result, log)
                 for frame in _side_frames(log, name):
                     yield frame
-                _track_page(pages, name, args, log)
+                _track_page(pages, name, args, log, ok=not tools.is_error(name, result))
+                pending_write = _pending_write_after(name, args, result)
                 result += _repeat_note(repeat_state, name, args)
                 convo = convo + economy.pair(
                     round_text, name, args,
@@ -730,7 +779,8 @@ async def stream_chat_run(
             yield _tool_result_frame(name, args, result, log)
             for frame in _side_frames(log, name):
                 yield frame
-            _track_page(pages, name, args, log)
+            _track_page(pages, name, args, log, ok=not tools.is_error(name, result))
+            pending_write = _pending_write_after(name, args, result)
             result += _repeat_note(repeat_state, name, args)
             convo = convo + economy.pair(
                 buffer, name, args,
@@ -1059,11 +1109,14 @@ async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
 MAX_REPAIR_ROUNDS = 2
 
 
-def _track_page(pages: dict, name: str, args: dict, log: "RunLog") -> None:
+def _track_page(pages: dict, name: str, args: dict, log: "RunLog", ok: bool = True) -> None:
     """Remember the last check of every file this run wrote — or that a
-    command it ran produced (the repair guard follows both)."""
+    command it ran produced (the repair guard follows both). A write that
+    FAILED wrote nothing (measured 2026-09-11: a content-less write_file
+    was counted as a page, which silenced the "printed code, no file
+    written" nudge and the run ended with the code in the chat)."""
     path = str((args or {}).get("path") or "")
-    if name in _FILE_WRITERS and path:
+    if name in _FILE_WRITERS and path and ok:
         pages[path] = getattr(log, "last_check", None) or {"verdict": "not measured", "report": ""}
     for produced in getattr(log, "produced_paths", []) or []:
         check = getattr(log, "last_check", None)
