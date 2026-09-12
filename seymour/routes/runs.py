@@ -9,9 +9,10 @@ import asyncio
 import json
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 
+from seymour import live_runs
 from seymour.db import ChatSession, Run, RunEvent, SessionLocal
 
 router = APIRouter(prefix="/api/runs")
@@ -85,6 +86,34 @@ async def approve(run_id: str, body: Decision):
     if not decide(run_id, body.allow):
         return {"answered": False, "note": "that request is no longer waiting"}
     return {"answered": True, "allow": body.allow}
+
+
+@router.post("/{run_id}/cancel")
+async def cancel_run(run_id: str):
+    """Stop a live chat run — the EXPLICIT stop (a closed tab is not one
+    any more). The executor records it as cancelled with the partial
+    call's head, as before; a run that already ended is reported plainly."""
+    stopped = await live_runs.cancel(run_id)
+    return {"cancelled": stopped, "note": None if stopped else "that run is not running"}
+
+
+@router.get("/{run_id}/live")
+async def live_run(run_id: str):
+    """Re-attach to a live (or just-finished) chat run: its frames so far,
+    coalesced, then the rest as they happen, over the same SSE contract
+    the chat uses — so any surface can watch a run whoever started it."""
+    live = live_runs.by_run(run_id)
+    if live is None:
+        raise HTTPException(404, "that run is not live (finished runs are in the trace)")
+
+    async def event_stream():
+        async for frame in live_runs.follow(live):
+            if frame.get("done"):
+                yield "data: [DONE]\n\n"
+            else:
+                yield f"data: {json.dumps(frame)}\n\n"
+    return StreamingResponse(event_stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.get("/{run_id}/export")

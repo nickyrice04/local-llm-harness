@@ -34,7 +34,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from seymour import runtime
+from seymour import live_runs, runtime
 from seymour.agent.discrete import discrete
 from seymour.db import ChatSession, Message, SessionLocal, Upload, utcnow
 from seymour.engine.adapter import GenerationRequest
@@ -326,11 +326,19 @@ async def chat(req: ChatRequest):
     # malformed-call repair, and the run's append-only EVENT LOG — lives
     # in run_executor (stage 4's convergence). The route's job ended at
     # context assembly; the trace tab reads what the executor logged.
+    # The run is DETACHED (live_runs): it runs as its own task and this
+    # response is merely its first consumer. Closing the tab no longer
+    # cancels it — POST /api/runs/{id}/cancel does — and reopening the
+    # conversation re-attaches through /api/runs/{id}/live.
+    if live_runs.by_session(session_id) and not live_runs.by_session(session_id).done:
+        raise HTTPException(409, "this conversation already has a run in progress — "
+                                 "stop it or wait for it to finish")
+    live = live_runs.start(session_id, stream_chat_run(
+        session_id, messages, req.message, is_new, history,
+        notice=vision_notice, overrides=req.inference))
+
     async def event_stream():
-        async for frame in stream_chat_run(
-            session_id, messages, req.message, is_new, history,
-            notice=vision_notice, overrides=req.inference,
-        ):
+        async for frame in live_runs.follow(live):
             if frame.get("done"):
                 yield "data: [DONE]\n\n"
             else:
@@ -343,6 +351,13 @@ async def chat(req: ChatRequest):
         # the stream into one lump and "streaming" silently isn't.
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+def _live_run_id(session_id: str) -> str | None:
+    """The id of the session's chat run if one is still running (a run
+    that finished stays attachable for a while but is not 'active')."""
+    live = live_runs.by_session(session_id)
+    return live.run_id if live and not live.done else None
 
 
 def _live_labels() -> str:
@@ -379,8 +394,11 @@ async def list_sessions():
             return [
                 {
                     "id": s.id, "title": s.title, "kind": s.kind or "chat",
+                    # A detached chat run counts as live between its model
+                    # calls too (no slot label while a tool runs).
                     "active": (s.id[:8] in live_labels
-                               or bool(s.job_id) and s.job_id[:8] in live_labels),
+                               or bool(s.job_id) and s.job_id[:8] in live_labels
+                               or _live_run_id(s.id) is not None),
                 }
                 for s in sessions
             ]
@@ -408,9 +426,13 @@ async def get_session(session_id: str):
                 # these to re-attach a live progress feed on open.
                 "kind": session.kind or "chat",
                 "job_id": session.job_id or "",
+                # The detached chat run to re-attach to (its replay buffer
+                # holds everything since it started), if one is live.
+                "live_run_id": _live_run_id(session.id) or "",
                 "active": (session.id[:8] in live_labels
                            or bool(session.job_id)
-                           and session.job_id[:8] in live_labels),
+                           and session.job_id[:8] in live_labels
+                           or _live_run_id(session.id) is not None),
                 "messages": [{"role": m.role, "content": m.content}
                              for m in session.messages],
             }
@@ -429,6 +451,9 @@ async def delete_session(session_id: str):
     rows tombstone their "Open chat" instead.
     """
     try:
+        live = live_runs.by_session(session_id)
+        if live and live.run_id:
+            await live_runs.cancel(live.run_id)
         await research.cancel_session(session_id)
         await discrete.cancel_session(session_id)
     except Exception as error:

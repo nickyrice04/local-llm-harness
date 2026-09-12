@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from seymour import runtime
+from seymour import live_runs, runtime
 from seymour.agent.discrete import discrete
 from seymour.agent.manager import AgentManager
 from seymour.config import settings
@@ -117,6 +117,7 @@ async def lifespan(app: FastAPI):
     # Shutdown mirrors startup, in reverse.
     from seymour import mcp
     await mcp.manager.shutdown()          # child servers stop with us
+    await live_runs.shutdown()            # detached chat runs stop; partial replies persist
     await discrete.shutdown()             # discrete jobs re-pause next boot
     await runtime.agent.shutdown()        # checkpoint stands; task resumes next boot
     if llama_embedder is not None:

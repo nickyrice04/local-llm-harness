@@ -55,12 +55,81 @@ let diffs: { tool: string; path: string; before: string; after: string; tag: str
 const beforeByPath = new Map<string, string>();   // last content seen, for diffs
 
 let view: EditorView | null = null;
-let treeHidden = false;
-function applyTree(): void {
-  root?.querySelector(".code-root")?.classList.toggle("no-tree", treeHidden);
-  const show = root?.querySelector(".code-tree-show") as HTMLElement | null;
-  if (show) show.hidden = !treeHidden;
+
+// ---- Layout: resizable, persisted columns --------------------------------------
+// The 2026-09-11 layout bug (the editor crushed to ~100 px in a wide
+// window) is fixed in CSS by real floors and container queries; what
+// lives here is the person's own say: the chat, tree and side-panel
+// widths they dragged, and whether they hid the tree or the panel —
+// persisted in localStorage like the avatar panel's width is.
+interface Layout { chat: number | null; tree: number; side: number | null; treeHidden: boolean; sideHidden: boolean }
+const LAYOUT_KEY = "seymour.code.layout";
+const layout: Layout = { chat: null, tree: 180, side: null, treeHidden: false, sideHidden: false };
+try {
+  const saved = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? "{}");
+  Object.assign(layout, saved);
+} catch { /* first run, or private mode */ }
+function saveLayout(): void {
+  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch { /* private mode */ }
 }
+/** Push the layout into CSS variables and classes (the CSS does the rest). */
+function applyLayout(): void {
+  if (!root) return;
+  root.style.setProperty("--code-tree-w", `${Math.min(400, Math.max(120, layout.tree))}px`);
+  if (layout.side) root.style.setProperty("--code-side-w", `${Math.max(260, layout.side)}px`);
+  else root.style.removeProperty("--code-side-w");
+  const main = document.getElementById("main");
+  if (main) {
+    if (layout.chat) main.style.setProperty("--chat-w", `${Math.max(320, layout.chat)}px`);
+    else main.style.removeProperty("--chat-w");
+  }
+  const codeRoot = root.querySelector(".code-root");
+  codeRoot?.classList.toggle("no-tree", layout.treeHidden);
+  codeRoot?.classList.toggle("no-side", layout.sideHidden);
+  const showTree = root.querySelector(".code-tree-show") as HTMLElement | null;
+  if (showTree) showTree.hidden = !layout.treeHidden;
+  const showSide = root.querySelector(".code-side-show") as HTMLElement | null;
+  if (showSide) showSide.hidden = !layout.sideHidden;
+}
+/** Kept for the tree buttons' old name. */
+function applyTree(): void { applyLayout(); }
+
+/** A drag strip between two columns. `measure` turns the pointer's x into
+ *  the new width of the column it controls; `commit` stores it. */
+function resizer(kind: "chat" | "tree" | "side", measure: (x: number) => number, commit: (w: number) => void): HTMLElement {
+  const strip = el("div", { className: `code-resize ${kind}`, title: "drag to resize" });
+  strip.addEventListener("pointerdown", (down: PointerEvent) => {
+    down.preventDefault();
+    strip.classList.add("dragging");
+    strip.setPointerCapture(down.pointerId);
+    const move = (ev: PointerEvent) => { commit(measure(ev.clientX)); applyLayout(); };
+    const up = () => {
+      strip.classList.remove("dragging");
+      strip.removeEventListener("pointermove", move);
+      strip.removeEventListener("pointerup", up);
+      saveLayout();
+      fitCompanion();
+    };
+    strip.addEventListener("pointermove", move);
+    strip.addEventListener("pointerup", up);
+  });
+  return strip;
+}
+
+/** The chat column and the editor both have floors (320 + 480 px, plus
+ *  the strips). When the shell cannot hold them AND the avatar column,
+ *  the avatar column steps aside — rather than the editor being crushed. */
+const NEEDED_PX = 320 + 480 + 24;
+function fitCompanion(): void {
+  const body = document.body;
+  if (!visible) { body.classList.remove("companion-collapsed"); return; }
+  if (body.classList.contains("avatar-off")) return;         // nothing to collapse
+  const sidebar = document.getElementById("sidebar");
+  const companionW = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--companion-w")) || 260;
+  const shell = body.clientWidth - (sidebar?.offsetWidth ?? 230);
+  body.classList.toggle("companion-collapsed", shell - companionW < NEEDED_PX);
+}
+window.addEventListener("resize", () => { if (visible) fitCompanion(); });
 const langConf = new Compartment();
 const readOnlyConf = new Compartment();
 
@@ -208,7 +277,7 @@ function renderTree(): void {
   }
   mount(treeEl, el("div.code-tree-head", {}, el("h3", {}, "workspace"),
                    el("button", { onclick: () => void loadTree(), title: "refresh" }, "↻"),
-                   el("button", { onclick: () => { treeHidden = true; applyTree(); }, title: "hide the tree" }, "«")),
+                   el("button", { onclick: () => { layout.treeHidden = true; saveLayout(); applyTree(); }, title: "hide the tree" }, "«")),
         el("div.code-tree-list", {}, ...(rows.length ? rows : [el("p.muted", {}, "empty workspace")])));
 }
 
@@ -216,8 +285,8 @@ function renderTabs(): void {
   if (!tabsEl) return;
   const current = open.find((f) => f.path === active);
   mount(tabsEl,
-    el("button.code-tree-show", { hidden: !treeHidden, title: "show the workspace tree",
-                                  onclick: () => { treeHidden = false; applyTree(); } }, "»"),
+    el("button.code-tree-show", { hidden: !layout.treeHidden, title: "show the workspace tree",
+                                  onclick: () => { layout.treeHidden = false; saveLayout(); applyTree(); } }, "»"),
     ...open.map((f) => el("button", {
       className: `code-tab${f.path === active ? " active" : ""}${f.dirty ? " dirty" : ""}`,
       title: f.path,
@@ -230,6 +299,8 @@ function renderTabs(): void {
     current ? el("button.primary", { onclick: () => void save(), title: "Cmd/Ctrl+S" }, "Save") : null,
     current && /\.html?$/i.test(current.path)
       ? el("button", { onclick: () => { previewPath = current.path; side = "preview"; renderSide(); } }, "Preview") : null,
+    el("button.code-side-show", { hidden: !layout.sideHidden, title: "show the side panel (preview, output, live, diff)",
+                                  onclick: () => { layout.sideHidden = false; saveLayout(); applyLayout(); } }, "panel ‹"),
   );
 }
 
@@ -266,7 +337,9 @@ function renderSide(): void {
   mount(sideTabsEl, ...(["preview", "output", "live", "diff"] as const).map((name) =>
     el("button", { className: `choice${side === name ? " active" : ""}`,
                    onclick: () => { side = name; renderSide(); } },
-       name === "live" && live && live.status === "writing" ? "live ●" : name)));
+       name === "live" && live && live.status === "writing" ? "live ●" : name)),
+    el("span.grow"),
+    el("button", { onclick: () => { layout.sideHidden = true; saveLayout(); applyLayout(); }, title: "hide the side panel" }, "»"));
   if (side === "preview") {
     if (!previewPath) { mount(sideEl, el("p.muted", {}, "Open an .html file to preview it here (sandboxed, no network).")); return; }
     // No sandbox ATTRIBUTE: the server serves every workspace page under a
@@ -368,6 +441,8 @@ export function show(on_: boolean): void {
   document.querySelector<HTMLButtonElement>('.nav-btn[data-view="code"]')?.classList.toggle("active", visible);
   if (visible && !files.length) void loadTree();
   if (visible) renderEditor();
+  applyLayout();
+  fitCompanion();
 }
 
 export function toggle(): void { show(!visible); }
@@ -380,11 +455,19 @@ export function initCodePane(container: HTMLElement): void {
   noteEl = el("div.code-note.muted", { hidden: true });
   sideTabsEl = el("div.code-side-tabs.pill-row");
   sideEl = el("div.code-side-body");
+  const mainEl = el("section.code-main", {}, tabsEl, editorEl, noteEl);
+  const sideSection = el("section.code-side", {}, sideTabsEl, sideEl);
+  const viewEl = () => document.getElementById("view");
   mount(container, el("div.code-root", {},
+    // chat | tree | editor | side, with a drag strip at each seam.
+    resizer("chat", (x) => x - (viewEl()?.getBoundingClientRect().left ?? 0), (w) => { layout.chat = Math.max(320, w); }),
     treeEl,
-    el("section.code-main", {}, tabsEl, editorEl, noteEl),
-    el("section.code-side", {}, sideTabsEl, sideEl),
+    resizer("tree", (x) => x - treeEl.getBoundingClientRect().left, (w) => { layout.tree = Math.min(400, Math.max(120, w)); }),
+    mainEl,
+    resizer("side", (x) => sideSection.getBoundingClientRect().right - x, (w) => { layout.side = Math.max(260, w); }),
+    sideSection,
   ));
+  applyLayout();
   renderTree(); renderTabs(); renderEditor(); renderSide();
   show(false);
 

@@ -1318,15 +1318,36 @@ body.reduced-motion * { transition: none !important; }
   white-space: pre-wrap; word-break: break-word; color: var(--ink); }
 
 /* ---- The Code workspace pane ------------------------------------------------
- * Mounted beside #view; #main becomes a two-column row while it is open. */
+ * Mounted beside #view; #main becomes a two-column row while it is open.
+ *
+ * The layout bug of 2026-09-11 (a 2000 px window, six columns, the editor
+ * crushed to ~100 px with its empty-state text wrapping one word per
+ * line): three fixed/percentage bases (chat 36 %, tree 180 px, side 42 %)
+ * plus the reserved avatar column left .code-main whatever remained, and
+ * `min-width: 0` let that be nothing; the only responsive step was a
+ * 900 px MEDIA query that never fires on a wide window with narrow
+ * columns. Now: the editor has a real floor (480 px); the side panel and
+ * then the tree collapse when the PANE cannot afford them (container
+ * queries on #code-pane — the pane's width is what matters, not the
+ * window's); the side panel may shrink to its floor before it collapses;
+ * every column is user-resizable (the drag strips) and persisted
+ * (code.ts, localStorage), like the avatar panel already is. */
 #main.with-code { flex-direction: row; }
-#main.with-code > #view { flex: 0 0 36%; min-width: 320px; border-right: 2px solid var(--line); }
-.code-root.no-tree .code-tree { display: none; }
-#code-pane { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
+#main.with-code > #view { flex: 0 1 var(--chat-w, 36%); min-width: 320px; border-right: 2px solid var(--line); }
+#code-pane { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex;
+  container-type: inline-size; container-name: codepane; }
 #code-pane[hidden] { display: none; }
 .code-root { display: flex; flex: 1 1 auto; min-width: 0; min-height: 0; }
-.code-tree { width: 180px; flex: 0 0 180px; background: var(--panel); border-right: 2px solid var(--line);
-  display: flex; flex-direction: column; min-height: 0; }
+.code-tree { flex: 0 0 var(--code-tree-w, 180px); background: var(--panel); border-right: 2px solid var(--line);
+  display: flex; flex-direction: column; min-height: 0; min-width: 120px; }
+/* The drag strips between columns (chat | tree | editor | side). */
+.code-resize { flex: 0 0 6px; cursor: col-resize; background: transparent; }
+.code-resize:hover, .code-resize.dragging { background: var(--accent-soft); }
+/* The Code pane in a narrow shell: the avatar column steps aside rather
+ * than crushing the editor (code.ts adds the class while the pane is
+ * open and the shell cannot hold chat + editor + companion). */
+body.companion-collapsed { grid-template-columns: 230px minmax(0, 1fr); grid-template-areas: "sidebar main"; }
+body.companion-collapsed #companion { display: none; }
 .code-tree-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px 4px; }
 .code-tree-head h3 { margin: 0; font-size: 9px; }
 .code-tree-list { overflow: auto; flex: 1; padding-bottom: 8px; }
@@ -1335,7 +1356,7 @@ body.reduced-motion * { transition: none !important; }
 .code-node.dir { color: var(--muted); }
 .code-node:hover { background: var(--card); }
 .code-node.open { background: var(--accent-soft); }
-.code-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.code-main { flex: 1 1 auto; min-width: 480px; display: flex; flex-direction: column; min-height: 0; }
 .code-tabs { display: flex; align-items: center; gap: 4px; padding: 6px 8px 0; border-bottom: 2px solid var(--line);
   background: var(--panel); flex-wrap: wrap; }
 .code-tab { font-family: "PixelHead", monospace; font-size: 8px; padding: 5px 8px; border: 2px solid var(--line);
@@ -1348,8 +1369,16 @@ body.reduced-motion * { transition: none !important; }
 .code-editor .cm-editor { height: 100%; }
 .code-empty { padding: 24px; }
 .code-note { padding: 4px 10px; font-size: 12px; border-top: 2px solid var(--line); background: var(--panel); }
-.code-side { width: 42%; flex: 0 0 42%; min-width: 260px; border-left: 2px solid var(--line); display: flex;
+.code-side { flex: 0 1 var(--code-side-w, 42%); min-width: 260px; border-left: 2px solid var(--line); display: flex;
   flex-direction: column; min-height: 0; background: var(--bg); }
+/* Collapse order, driven by the pane's own width: the side panel goes
+ * first (the editor keeps its 480 px), then the tree. These sit BELOW
+ * the base rules on purpose — equal specificity, so source order decides
+ * (measured 2026-09-11: above them, the side rule silently lost). */
+@container codepane (max-width: 960px) { .code-side, .code-resize.side { display: none; } }
+@container codepane (max-width: 700px) { .code-tree, .code-resize.tree { display: none; } }
+.code-root.no-tree .code-tree, .code-root.no-tree .code-resize.tree { display: none; }
+.code-root.no-side .code-side, .code-root.no-side .code-resize.side { display: none; }
 .code-side-tabs { display: flex; gap: 6px; padding: 8px; border-bottom: 2px solid var(--line); background: var(--panel); }
 .code-side-body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 .code-preview { width: 100%; flex: 1 1 auto; min-height: 260px; border: 2px solid var(--line); border-radius: 8px; background: #fff; }
@@ -1363,10 +1392,12 @@ body.reduced-motion * { transition: none !important; }
 .diff-line.hunk { color: var(--muted); font-family: "PixelHead", monospace; font-size: 7px; margin: 4px 0 2px; }
 .diff-line.ctx { color: var(--muted); }
 @media (max-width: 900px) {
+  /* A genuinely small window (a phone, a half-screen): stack instead. */
   #main.with-code { flex-direction: column; }
-  #main.with-code > #view { flex: 0 0 40%; border-right: none; border-bottom: 2px solid var(--line); }
-  .code-tree { display: none; }
-  .code-side { width: 100%; flex: 0 0 45%; border-left: none; border-top: 2px solid var(--line); }
+  #main.with-code > #view { flex: 0 0 40%; min-width: 0; border-right: none; border-bottom: 2px solid var(--line); }
+  .code-tree, .code-resize { display: none; }
+  .code-main { min-width: 0; }
+  .code-side { width: 100%; flex: 0 0 45%; min-width: 0; border-left: none; border-top: 2px solid var(--line); }
   .code-root { flex-direction: column; }
 }
 
@@ -1388,3 +1419,42 @@ body.reduced-motion * { transition: none !important; }
   border-bottom: 2px solid var(--line); color: var(--danger); background: var(--card); }
 .card-report.muted { color: var(--muted); font-family: inherit; }
 @media (max-width: 900px) { .cards { margin-left: 0; } .card-body, .card-preview { max-height: 300px; height: 300px; } }
+
+/* ---- Tool cards in the chat (terminal, diff, search, result) -------------
+ * Every tool call a run makes is a card in the thread, the way the code
+ * card already is: what was asked, whether it went well, and the result
+ * itself — scrollable, collapsible, never a bare "running grep…" line. */
+.tool-card { border: 2px solid var(--line); border-radius: 8px; background: var(--card); overflow: hidden;
+  box-shadow: 3px 3px 0 var(--line); }
+.tool-card .card-head { cursor: pointer; }
+.tool-card .card-title { font-family: ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.tool-card .card-kind { font-family: "PixelHead", monospace; font-size: 8px; color: var(--muted); }
+.tool-card .card-body { max-height: 280px; overflow: auto; }
+.tool-card .card-body[hidden] { display: none; }
+.tool-card pre { margin: 0; padding: 8px 10px; font: 12px/1.45 ui-monospace, Menlo, monospace; white-space: pre-wrap;
+  word-break: break-word; color: var(--ink); }
+.tool-card.terminal pre { background: hsl(var(--accent-h) 8% 10%); color: hsl(var(--accent-h) 10% 88%); }
+[data-theme="light"] .tool-card.terminal pre { background: hsl(var(--accent-h) 8% 14%); color: hsl(var(--accent-h) 10% 92%); }
+.tool-card .card-cmd { padding: 6px 10px; font: 12px/1.4 ui-monospace, Menlo, monospace; color: var(--muted);
+  border-bottom: 1px solid var(--line); white-space: pre-wrap; word-break: break-word; }
+.tool-card .diff-line { padding: 0 2px; }
+.tool-card .diff-stat { font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+.tool-card .diff-stat .add { color: var(--accent); } .tool-card .diff-stat .del { color: var(--danger); }
+.tool-card .card-more { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--line);
+  border-radius: 0; box-shadow: none; padding: 4px 10px; font-size: 11px; color: var(--muted); background: var(--panel); }
+.badge.exit-ok { background: var(--accent-soft); color: var(--accent); }
+.badge.exit-bad { color: var(--danger); }
+
+/* ---- The todo / plan panel ------------------------------------------------ */
+.todo-panel { margin: 6px 0 0 52px; border: 2px solid var(--line); border-radius: 8px; background: var(--panel);
+  box-shadow: 3px 3px 0 var(--line); overflow: hidden; }
+.todo-panel .card-head { padding: 5px 10px; }
+.todo-list { margin: 0; padding: 6px 10px 8px; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.todo-item { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.todo-item .todo-mark { font-family: ui-monospace, Menlo, monospace; font-size: 12px; flex: 0 0 auto; }
+.todo-item.done { color: var(--muted); text-decoration: line-through; }
+.todo-item.in_progress { color: var(--ink); font-weight: 600; }
+.todo-item.in_progress .todo-mark { color: var(--accent); }
+.todo-item.pending { color: var(--muted); }
+@media (max-width: 900px) { .todo-panel { margin-left: 0; } }

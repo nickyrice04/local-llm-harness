@@ -331,6 +331,9 @@ async def stream_chat_run(
     request = None
     status = "done"
     try:
+        # The run's identity goes first so a consumer can address it (the
+        # cancel route, a tab re-attaching through /api/runs/{id}/live).
+        yield {"run_id": log.id}
         yield {"session_id": session_id}
         if notice:
             yield {"notice": notice}
@@ -836,8 +839,13 @@ async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
     bus.publish("run", "tool", run_id=log.id, tool=name, path=path,
                 summary=tools.describe_call(catalog[name], safe_args) if name in catalog else name)
     t0 = time.monotonic()
+    # For an edit, the chat's diff card wants what CHANGED: the file
+    # before and after, diffed here (the tool result only shows the new
+    # region). Bounded, best effort, never a reason for the call to fail.
+    before_text = _snapshot(path) if name in _DIFFED else None
     result = await tools.execute(name, safe_args)
     ok = not tools.is_error(name, result)
+    log.last_diff = _diff_of(path, before_text) if before_text is not None and ok else None
     log.last_spill = None
     if economy is not None:
         result, log.last_spill = economy.result_text(name, result)
@@ -891,11 +899,55 @@ _FILE_WRITERS = {"write_file", "append_file", "edit_lines", "replace_in_file"}
 
 
 def _tool_result_frame(name: str, args: dict, result: str, log: "RunLog") -> dict:
-    """What the chat's code card needs after a tool ran: which file, whether
-    it went well, the tag, and the check's verdict."""
+    """What the chat's cards need after a tool ran: which file, whether it
+    went well, the tag, the check's verdict, the head of the result (a
+    terminal card shows the output, a search card the matches) and, for
+    an edit, the unified diff with its +/- counts."""
     path = str((args or {}).get("path") or "") or None
+    diff = getattr(log, "last_diff", None)
     return {"tool_result": {"name": name, "path": path,
                             "ok": not tools.is_error(name, result),
                             "tag": getattr(log, "last_tag", None),
                             "check": getattr(log, "last_check", None),
-                            "head": (result or "")[:300]}}
+                            "head": (result or "")[:2000],
+                            "chars": len(result or ""),
+                            "spill": (getattr(log, "last_spill", None) or {}).get("path"),
+                            "diff": diff}}
+
+
+# Tools whose result frame carries a before/after diff (the code card
+# already shows a whole written file; an edit needs the change itself).
+_DIFFED = {"edit_lines", "replace_in_file", "append_file"}
+# The diff shown in a card is bounded: enough to review, never a 4 MB file.
+DIFF_MAX_LINES = 300
+
+
+def _snapshot(path: str | None) -> str | None:
+    """The file's current text, "" when it does not exist yet, None when
+    the path is not readable inside the workspace."""
+    if not path:
+        return None
+    from seymour.tools import paths
+    try:
+        target = paths.resolve(path)
+    except ValueError:
+        return None
+    try:
+        return target.read_text(encoding="utf-8", errors="replace") if target.is_file() else ""
+    except OSError:
+        return None
+
+
+def _diff_of(path: str | None, before: str) -> dict | None:
+    """A unified diff (2 lines of context) between `before` and the file
+    now, with added/removed counts; None when nothing changed."""
+    import difflib
+    after = _snapshot(path)
+    if after is None or after == before:
+        return None
+    lines = list(difflib.unified_diff(before.splitlines(), after.splitlines(),
+                                      fromfile=f"{path} (before)", tofile=f"{path} (after)", lineterm="", n=2))
+    added = sum(1 for l in lines[2:] if l.startswith("+"))
+    removed = sum(1 for l in lines[2:] if l.startswith("-"))
+    cut = len(lines) > DIFF_MAX_LINES
+    return {"lines": lines[:DIFF_MAX_LINES], "added": added, "removed": removed, "truncated": cut}

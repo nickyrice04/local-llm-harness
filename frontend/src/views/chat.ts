@@ -33,6 +33,7 @@ import { drawScene } from "../avatar/scene";
 import { openDocument } from "../docviewer";
 import { openFile as openInCode } from "../code";
 import { cardProgress, cardSettle, codeCard } from "../codecard";
+import { todoPanel, todoUpdate, toolCard, toolCardSettle, type ToolResult } from "../toolcards";
 import { refreshSessions } from "../sessions";
 import { ACCENTS, prefs, resolvedTheme } from "../theme";
 
@@ -292,7 +293,7 @@ export function show(container: HTMLElement): ViewHandle {
    *  live in a slot — the re-attached progress feed. */
   async function openSession(id: string): Promise<void> {
     type SessionDetail = {
-      id: string; kind: string; job_id: string; active: boolean;
+      id: string; kind: string; job_id: string; active: boolean; live_run_id?: string;
       messages: { role: string; content: string }[];
     };
     let session: SessionDetail;
@@ -329,6 +330,9 @@ export function show(container: HTMLElement): ViewHandle {
         row(message.role as "user" | "assistant", message.content);
       }
     }
+    // A chat run still going (detached server-side): re-attach to it —
+    // its frames so far replay, then the rest arrive live.
+    if (session.live_run_id && !aborter) void reattach(session.live_run_id);
     // A task conversation whose run still holds a slot: watch it again.
     if (session.active && session.job_id
         && (sessionKind === "agent" || sessionKind === "research")) {
@@ -550,13 +554,40 @@ export function show(container: HTMLElement): ViewHandle {
       return;
     }
 
-    // Plain chat: stream. The reply's SOURCE OF TRUTH is the `raw`
-    // markdown string; the bubble re-renders from it on a throttle
-    // through md.ts's sanitizing gate. Re-rendering the whole (small)
-    // message is deliberate: with no frozen prefix there is nothing to
-    // corrupt, and the final paint is always canonical.
+    // Plain chat: stream. The run is DETACHED server-side (live_runs):
+    // this response is only its first consumer, Stop is an explicit
+    // cancel route, and a tab that comes back re-attaches through
+    // openSession. What the frames become in the thread is one place —
+    // makeConsumer — shared by this path and the re-attach path.
+    const consumer = makeConsumer();
+    send.hidden = true; stop.hidden = false;
+    aborter = new AbortController();
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        signal: aborter.signal,
+      });
+      await consumeRun(response, consumer);
+    } finally {
+      finishRun();
+    }
+  }
+
+  /** What a run's frames become in the thread: one assistant row, its
+   *  cards (code, diff, terminal, search, result) and the plan panel.
+   *  The reply's SOURCE OF TRUTH is the `raw` markdown string; the
+   *  bubble re-renders from it on a throttle through md.ts's sanitizing
+   *  gate. Re-rendering the whole (small) message is deliberate: with no
+   *  frozen prefix there is nothing to corrupt, and the final paint is
+   *  always canonical. */
+  interface Consumer { handle(frame: any): void; finish(): void; lost(text: string): void }
+  let currentRunId: string | null = null;      // the run this tab is watching
+
+  function makeConsumer(): Consumer {
     const reply = row("assistant", "");
-    // Code cards live beside the prose (renderMarkdown replaces the prose
+    // Cards live beside the prose (renderMarkdown replaces the prose
     // node's children, and a card must survive every repaint).
     const cards = el("div.cards");
     reply.parentElement!.after(cards);       // below the bubble, full width — not a flex sibling beside it
@@ -567,13 +598,13 @@ export function show(container: HTMLElement): ViewHandle {
     reply.classList.add("thinking");
     reply.textContent = "…";
     let raw = "";                            // the accumulated markdown
-    let statusEl: HTMLElement | null = null; // "searching the web…" line
-    let liveEl: HTMLElement | null = null;   // the tool call being written, live
+    let liveEl: HTMLElement | null = null;   // the code card of the call being written, live
+    let pendingTool: HTMLElement | null = null; // the tool card of the call now executing
+    let todo: HTMLElement | null = null;     // the plan panel, once todo_write has run
     let paintTimer: number | null = null;
     const paint = (final = false) => {
       if (paintTimer !== null) { clearTimeout(paintTimer); paintTimer = null; }
       renderMarkdown(reply, raw, !final);
-      statusEl = null;                       // the re-render detached it
       reply.scrollIntoView({ block: "end" });
     };
     const queuePaint = () => {               // ~8 paints/s, not per-token
@@ -581,19 +612,14 @@ export function show(container: HTMLElement): ViewHandle {
       paintTimer = setTimeout(() => { paintTimer = null; paint(); },
                               120) as unknown as number;
     };
-    send.hidden = true; stop.hidden = false;
-    aborter = new AbortController();
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-        signal: aborter.signal,
-      });
-      await readSSE(response, (payload) => {
-        if (payload === "[DONE]") return;
-        const frame = JSON.parse(payload);
-        // First frame names the session (so turn 2 can reference it).
+    const wake = () => {                     // first real content: drop the pulse
+      if (reply.classList.contains("thinking")) { reply.classList.remove("thinking"); reply.textContent = ""; }
+    };
+    return {
+      handle(frame: any) {
+        // The run names itself first: that id is what Stop cancels.
+        if (frame.run_id) currentRunId = frame.run_id;
+        // Then the session (so turn 2 can reference it).
         if (frame.session_id) {
           const isNew = sessionId !== frame.session_id;
           sessionId = frame.session_id;
@@ -602,8 +628,8 @@ export function show(container: HTMLElement): ViewHandle {
         // Authoritative system notices (e.g. the vision diagnosis) render
         // in Seymour's own voice, not as model output.
         if (frame.notice) sysNote(frame.notice);
-        // The context economy did something this round: say so in one
-        // quiet line (the trace has the full account).
+        // The context economy did something this round: one quiet line
+        // (the trace has the full account).
         if (frame.economy) {
           const e = frame.economy;
           sysNote(e.what === "compacted"
@@ -622,21 +648,47 @@ export function show(container: HTMLElement): ViewHandle {
           raw = frame.replace;
           paint();
         }
+        // The plan (todo_write): outside the context window, visible at
+        // a glance, above the cards.
+        if (frame.todos) {
+          wake();
+          if (!todo) { todo = todoPanel(); cards.prepend(todo); }
+          todoUpdate(todo, frame.todos);
+        }
         if (frame.tool_progress) {
           // The call is being written: the code card shows the file
           // growing, in the chat, in place of the pulsing placeholder.
           const p = frame.tool_progress;
-          reply.classList.remove("thinking");
-          if (reply.textContent === "…") reply.textContent = "";
+          wake();
           if (!liveEl) { liveEl = codeCard(p.path ?? null, p.name); cards.append(liveEl); }
           cardProgress(liveEl, p);
         }
+        if (frame.tool) {
+          // The call executes now. File writes keep their code card;
+          // every other tool gets its own card (terminal, diff, search,
+          // result) — running, then settled by tool_result.
+          const name: string = frame.tool.name;
+          const path = String(frame.tool.args?.path ?? "");
+          wake(); paint();
+          if (name === "write_file" || name === "append_file") {
+            // Remember HTML files this run writes: they get an "open" chip
+            // when the run ends (the viewer shows them as a sandboxed app).
+            if (/\.html?$/i.test(path) && !htmlOutputs.includes(path)) htmlOutputs.push(path);
+          } else {
+            liveEl?.remove(); liveEl = null;   // an edit's live text becomes its diff card
+            pendingTool = toolCard(name, frame.tool.args ?? {}, frame.tool.summary ?? `running ${name}`);
+            cards.append(pendingTool);
+            pendingTool.scrollIntoView({ block: "end" });
+          }
+        }
         if (frame.tool_result) {
-          // The tool ran: the card (or a new one, for calls that streamed
-          // too fast to show) settles into its final state with the
-          // check's verdict; non-file tools just retire the live card.
-          const r = frame.tool_result;
-          if (r.path && ["write_file", "append_file", "edit_lines", "replace_in_file"].includes(r.name)) {
+          const r = frame.tool_result as ToolResult;
+          if (pendingTool) {
+            toolCardSettle(pendingTool, r, (p) => void openInCode(p));
+            pendingTool = null;
+          } else if (r.path && (r.name === "write_file" || r.name === "append_file")) {
+            // The card (or a new one, for calls that streamed too fast to
+            // show) settles into its final state with the check's verdict.
             const card = liveEl ?? codeCard(r.path, r.name);
             if (!card.isConnected) cards.append(card);
             void cardSettle(card, r);
@@ -645,38 +697,8 @@ export function show(container: HTMLElement): ViewHandle {
             liveEl?.remove(); liveEl = null;
           }
         }
-        if (frame.tool) {
-          if (liveEl && !["write_file", "append_file", "edit_lines", "replace_in_file"].includes(frame.tool.name)) {
-            liveEl.remove(); liveEl = null;      // a non-file call: the status line takes over
-          }
-          // Remember HTML files this run writes: they get an "open" chip
-          // when the run ends (the viewer shows them as a sandboxed app).
-          const path = String(frame.tool.args?.path ?? "");
-          if (["write_file", "append_file", "edit_lines", "replace_in_file"].includes(frame.tool.name)
-              && /\.html?$/i.test(path) && !htmlOutputs.includes(path)) {
-            htmlOutputs.push(path);
-          }
-          // The tool status renders as its own line AFTER the prose so
-          // far — never instead of it.
-          reply.classList.remove("thinking");
-          paint();
-          // The server phrases the action (one place knows every tool);
-          // the old two-tool guess stays as the fallback.
-          statusEl = el("div.msg-status.thinking", {},
-            (frame.tool.summary
-              ?? (frame.tool.name === "web_search"
-                  ? `searching the web: ${frame.tool.args?.query ?? ""}`
-                  : `running ${frame.tool.name}`)) + "…");
-          reply.append(statusEl);
-        }
         if (frame.delta) {
-          if (reply.classList.contains("thinking")) {
-            // First real token: clear the placeholder.
-            reply.classList.remove("thinking");
-            reply.textContent = "";
-          }
-          statusEl?.remove();
-          statusEl = null;
+          wake();
           liveEl = null;                          // a settled card stays in the thread
           raw += frame.delta;
           queuePaint();
@@ -697,35 +719,76 @@ export function show(container: HTMLElement): ViewHandle {
               el("button.chip", { onclick: () => void openInCode(path) }, `✎ edit ${path}`)])));
           }
         }
-        if (frame.error) { raw += `\n[${frame.error}]`; paint(); }
+        if (frame.error) {
+          wake();
+          raw += frame.error === "stopped" ? "\n[stopped]" : `\n[${frame.error}]`;
+          paint();
+        }
+      },
+      finish() { paint(true); },             // the canonical final render
+      lost(text: string) {
+        // The connection went, the run did not: say so and keep the partial.
+        (liveEl as HTMLElement | null)?.remove(); liveEl = null;
+        wake();
+        raw += `\n[${text}]`;
+        paint(true);
+      },
+    };
+  }
+
+  /** Read a run's SSE stream into a consumer until it ends. */
+  async function consumeRun(response: Response, consumer: Consumer): Promise<void> {
+    try {
+      await readSSE(response, (payload) => {
+        if (payload === "[DONE]") return;
+        consumer.handle(JSON.parse(payload));
       });
-      paint(true);                           // the canonical final render
+      consumer.finish();
     } catch (error: any) {
+      // An AbortError is this view going away (destroy): the run keeps
+      // going server-side and openSession re-attaches later — nothing to
+      // say here. Anything else is a real connection loss.
       if (error?.name !== "AbortError") {
-        raw += `\n[${error?.message ?? "connection failed"}]`;
-      } else if (!raw) {
-        // Stopped before anything visible: the server records the run
-        // as cancelled with the partial call; the thread says so too.
-        // (Typed through a local: TS narrows the closure variable to
-        // null here, which is exactly what it is not while streaming.)
-        const live = liveEl as HTMLElement | null;
-        raw = live ? `[stopped — ${live.querySelector(".card-title")?.textContent ?? "while writing"}]`
-                   : "[stopped]";
+        consumer.lost(`${error?.message ?? "connection lost"} — the run continues on the server; reopen this conversation to re-attach`);
       }
-      (liveEl as HTMLElement | null)?.remove(); liveEl = null;
-      if (raw) paint(true);                  // keep a partial reply visible
-    } finally {
-      if (paintTimer !== null) clearTimeout(paintTimer);
-      aborter = null;
-      send.hidden = false; stop.hidden = true;
-      // A job finished while this reply streamed: run its deferred
-      // reload now (the persisted outcome AND this reply both show).
-      if (pendingReload && !destroyed) {
-        pendingReload = false;
+    }
+  }
+
+  /** The composer's state after a run (started here or re-attached). */
+  function finishRun(): void {
+    aborter = null;
+    currentRunId = null;
+    send.hidden = false; stop.hidden = true;
+    // A job finished while this reply streamed: run its deferred
+    // reload now (the persisted outcome AND this reply both show).
+    if (pendingReload && !destroyed) {
+      pendingReload = false;
+      if (sessionId) void openSession(sessionId);
+      refreshSessions();
+    }
+    input.focus();
+  }
+
+  /** Re-attach to a run that is already going (this conversation was
+   *  reopened, or another tab started it): its frames so far replay,
+   *  coalesced, then the rest arrive live. */
+  async function reattach(runId: string): Promise<void> {
+    const consumer = makeConsumer();
+    currentRunId = runId;
+    send.hidden = true; stop.hidden = false;
+    aborter = new AbortController();
+    try {
+      const response = await fetch(`/api/runs/${runId}/live`, { signal: aborter.signal });
+      if (response.status === 404) {
+        // Finished and gone from the live registry between the session
+        // read and now: the persisted message is the record — reload.
+        consumer.lost("that run has finished — reloading");
         if (sessionId) void openSession(sessionId);
-        refreshSessions();
+        return;
       }
-      input.focus();
+      await consumeRun(response, consumer);
+    } finally {
+      finishRun();
     }
   }
 
@@ -750,7 +813,12 @@ export function show(container: HTMLElement): ViewHandle {
     },
   }, attach, input, send, stop);
 
-  stop.onclick = () => aborter?.abort();
+  // Stop is an EXPLICIT cancel of the run (a closed tab is no longer one):
+  // the server records it with the partial call's head, as before.
+  stop.onclick = () => {
+    if (currentRunId) void post(`/api/runs/${currentRunId}/cancel`).catch(() => { /* already over */ });
+    else aborter?.abort();
+  };
 
   // ---- Mount + subscriptions --------------------------------------------
   mount(container, log, el("div.composer-block", {}, chipsRow, modeRow, composer, fileInput));
@@ -797,8 +865,8 @@ export function show(container: HTMLElement): ViewHandle {
   return {
     destroy() {
       destroyed = true;                // stale async work must not land
-      // Abort any in-flight stream: the server sees the disconnect and
-      // frees the Tier-1 slot (no ghost generations from old views).
+      // Close this view's stream. The run itself is detached and keeps
+      // going; reopening the conversation re-attaches to it.
       aborter?.abort();
       // Stop the greeting scene's clock (nothing should tick unseen).
       if (heroTicker !== null) clearInterval(heroTicker);
