@@ -13,6 +13,11 @@ a page it wrote still fails (run_executor's repair guard).
     .py          python -m py_compile (the model's sandbox)
     .js/.mjs     node --check (when node exists)
     .json        json.loads
+    .xlsx        RECALCULATED through LibreOffice; error literals and
+                 formulas that produce nothing fail (seymour.verify.office)
+    .pptx        python-pptx checks (empty placeholders, text overflow,
+                 slide count) + a render to PNGs the model/judge can see
+    .docx        python-docx loads it; structure counted; pages rendered
     anything else: no check (None) — nothing is claimed.
 
 A check that cannot run says "not measured", never "PASS".
@@ -24,7 +29,7 @@ from pathlib import Path
 
 from seymour.tools import paths
 
-CHECKABLE = (".html", ".htm", ".py", ".js", ".mjs", ".json")
+CHECKABLE = (".html", ".htm", ".py", ".js", ".mjs", ".json", ".xlsx", ".pptx", ".docx")
 
 
 def _verdict_of(report: str) -> str:
@@ -47,6 +52,19 @@ async def auto_check(path: str) -> dict | None:
     if suffix not in CHECKABLE or not target.is_file():
         return None
     from seymour import tools                      # late: the registry imports this module's family
+    if suffix in (".xlsx", ".pptx", ".docx"):
+        # The office verifiers run outside the model's sandbox (they are
+        # the harness's, like check_page) and never raise past here.
+        from seymour.verify import office
+        try:
+            if suffix == ".xlsx":
+                return await office.recalc_xlsx(target)
+            if suffix == ".pptx":
+                return await office.check_pptx(target)
+            return await office.check_docx(target)
+        except Exception as error:
+            return {"kind": suffix[1:], "verdict": "not measured",
+                    "report": f"[auto-check {path}] the {suffix[1:]} check could not run: {type(error).__name__}: {error}"}
     if suffix in (".html", ".htm"):
         report = await tools.execute("check_page", {"path": path, "seconds": 3})
         return {"kind": "check_page", "verdict": _verdict_of(report), "report": report}

@@ -20,8 +20,23 @@ class ServerBody(BaseModel):
 
 @router.get("")
 async def overview():
-    """Every configured server with its connection state and tools."""
-    return {"servers": mcp.manager.overview()}
+    """Every configured server with its connection state, tools and their
+    real schemas — plus the config file the person can edit by hand."""
+    _configs, file_error = mcp.load_file_configs()
+    path = mcp.config_file()
+    return {"servers": mcp.manager.overview(),
+            "config_file": {"path": str(path), "exists": path.exists(), "error": file_error}}
+
+
+@router.post("/reload")
+async def reload():
+    """Re-read ~/.seymour/mcp.json and (re)connect everything in it."""
+    configs, file_error = mcp.load_file_configs()
+    connected = []
+    for cfg in configs:
+        server = await mcp.manager.connect(cfg)
+        connected.append({"name": cfg.name, "connected": server.connected, "error": server.error})
+    return {"servers": connected, "error": file_error}
 
 
 @router.get("/presets")
@@ -55,5 +70,8 @@ async def reconnect(name: str):
 
 @router.delete("/{name}")
 async def remove(name: str):
+    cfg = next((c for c in mcp.load_configs() if c.name == name), None)
+    if cfg is not None and cfg.source == "file":
+        raise HTTPException(409, f"{name} comes from {mcp.config_file()} — remove it there, then Reload")
     await mcp.manager.remove(name)
     return {"removed": name}

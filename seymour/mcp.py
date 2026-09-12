@@ -58,22 +58,58 @@ class ServerConfig:
     args: list[str] = field(default_factory=list)
     env: dict[str, str] = field(default_factory=dict)
     cwd: str = ""
+    # Where it was configured: "settings" (the UI, persisted in app_state)
+    # or "file" (~/.seymour/mcp.json, the person's own editable config).
+    source: str = "settings"
 
     @staticmethod
     def valid_name(name: str) -> bool:
         return bool(re.fullmatch(r"[A-Za-z0-9_-]{1,32}", name or ""))
 
 
-def load_configs() -> list[ServerConfig]:
-    """The configured servers (persisted in app_state)."""
-    raw = get_state(STATE_KEY)
-    if not raw:
-        return []
+def config_file() -> Path:
+    """The person's own MCP config: ~/.seymour/mcp.json, in the shape
+    Claude Code and dsh use, so a server definition copies straight in:
+
+        {"mcpServers": {"github": {"command": "npx", "args": ["-y", "@x/server"],
+                                   "env": {"TOKEN": "…"}, "cwd": ""}}}
+    """
+    from seymour.config import settings
+    return settings.data_dir / "mcp.json"
+
+
+def load_file_configs() -> tuple[list[ServerConfig], str]:
+    """Servers from the config file; (configs, error text or "")."""
+    path = config_file()
+    if not path.exists():
+        return [], ""
     try:
-        rows = json.loads(raw)
-    except json.JSONDecodeError:
-        return []
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return [], f"{path.name}: {error}"
+    servers = data.get("mcpServers") if isinstance(data, dict) else None
+    if not isinstance(servers, dict):
+        return [], f"{path.name}: expected a top-level \"mcpServers\" object"
     out = []
+    for name, row in servers.items():
+        if not isinstance(row, dict) or not ServerConfig.valid_name(str(name)) or not str(row.get("command", "")).strip():
+            continue
+        out.append(ServerConfig(name=str(name), command=str(row["command"]),
+                                args=[str(a) for a in row.get("args", [])],
+                                env={str(k): str(v) for k, v in (row.get("env") or {}).items()},
+                                cwd=str(row.get("cwd", "")), source="file"))
+    return out, ""
+
+
+def load_configs() -> list[ServerConfig]:
+    """Every configured server: the UI's (app_state) plus the file's. On a
+    name clash the file wins — it is the one the person edits by hand."""
+    raw = get_state(STATE_KEY)
+    out: list[ServerConfig] = []
+    try:
+        rows = json.loads(raw) if raw else []
+    except json.JSONDecodeError:
+        rows = []
     for row in rows if isinstance(rows, list) else []:
         try:
             cfg = ServerConfig(name=str(row["name"]), command=str(row["command"]),
@@ -84,11 +120,15 @@ def load_configs() -> list[ServerConfig]:
             continue
         if ServerConfig.valid_name(cfg.name):
             out.append(cfg)
-    return out
+    from_file, _error = load_file_configs()
+    file_names = {c.name for c in from_file}
+    return [c for c in out if c.name not in file_names] + from_file
 
 
 def save_configs(configs: list[ServerConfig]) -> None:
-    set_state(STATE_KEY, json.dumps([cfg.__dict__ for cfg in configs]))
+    """Persist the UI-configured servers (file-sourced ones live in the file)."""
+    set_state(STATE_KEY, json.dumps([{k: v for k, v in cfg.__dict__.items() if k != "source"}
+                                     for cfg in configs if cfg.source != "file"]))
 
 
 # ---- Presets: one-click servers -------------------------------------------
@@ -337,9 +377,17 @@ class McpManager:
         rows = []
         for cfg in load_configs():
             server = self.servers.get(cfg.name)
+            specs = server.tools if server else []
             rows.append({"name": cfg.name, "command": cfg.command, "args": cfg.args,
+                         "source": cfg.source,
                          "connected": bool(server and server.connected),
-                         "tools": [t["name"] for t in (server.tools if server else [])],
+                         "tools": [t["name"] for t in specs],
+                         # The REAL schemas from listTools: what each tool
+                         # takes, as the server declared it (Settings shows them).
+                         "tool_specs": [{"name": t["name"],
+                                         "public": _public_name(cfg.name, t["name"]),
+                                         "description": (t.get("description") or "")[:600],
+                                         "schema": t.get("inputSchema") or {}} for t in specs],
                          "error": server.error if server else "not started"})
         return rows
 

@@ -76,3 +76,29 @@ async def test_bad_command_is_reported_not_raised():
 def test_public_names_are_safe():
     assert mcp._public_name("gh", "create issue!") == "mcp__gh__create_issue_"
     assert not mcp.ServerConfig.valid_name("bad name") and mcp.ServerConfig.valid_name("ok-1")
+
+
+def test_the_config_file_mounts_servers_and_wins_on_a_name_clash(tmp_path, monkeypatch):
+    """~/.seymour/mcp.json in Claude Code's mcpServers shape: parsed,
+    marked as file-sourced, never written back by save_configs, and the
+    file's definition wins over the UI's when names clash."""
+    import json
+    from seymour import mcp
+    from seymour.db import init_db
+    init_db()
+    path = tmp_path / "mcp.json"
+    monkeypatch.setattr(mcp, "config_file", lambda: path)
+    assert mcp.load_file_configs() == ([], "")
+    path.write_text(json.dumps({"mcpServers": {
+        "github": {"command": "npx", "args": ["-y", "@x/server"], "env": {"TOKEN": "t"}},
+        "bad name!": {"command": "x"}, "nocmd": {"args": []}}}))
+    configs, error = mcp.load_file_configs()
+    assert error == "" and [c.name for c in configs] == ["github"]
+    assert configs[0].source == "file" and configs[0].env == {"TOKEN": "t"}
+    mcp.save_configs([mcp.ServerConfig(name="github", command="old"), mcp.ServerConfig(name="mine", command="uvx"), *configs])
+    merged = {c.name: c for c in mcp.load_configs()}
+    assert merged["github"].command == "npx" and merged["github"].source == "file"     # the file wins
+    assert merged["mine"].source == "settings"
+    assert "github" not in [c.name for c in mcp.load_configs() if c.source == "settings"]  # not written back
+    path.write_text("{not json")
+    assert "mcp.json" in mcp.load_file_configs()[1]

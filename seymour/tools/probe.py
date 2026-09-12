@@ -19,6 +19,7 @@ import secrets
 from pathlib import Path
 
 from seymour.events import bus
+from seymour.verify import web as _web
 from seymour.tools import Tool, paths
 
 # id → the future the tool is awaiting; resolved by POST /api/workspace/probe/<id>.
@@ -163,9 +164,11 @@ async def _headless(target: Path, seconds: int) -> dict | None:
     return {**facts, "errors": errors, "elapsed": seconds * 1000, "rafCalls": -1}
 
 
-async def check_page(path: str, seconds: str | int = "") -> str:
+async def check_page(path: str, seconds: str | int = "", interact: str = "") -> str:
     """Tool entry: load a workspace HTML page in a browser and report
-    console errors, missing ids, animation activity and visible text."""
+    console errors, missing ids, animation activity and visible text —
+    and, with `interact`, DRIVE it: click / type / drag the things the
+    task named and report whether the DOM changed (seymour.verify.web)."""
     try:
         target = paths.resolve(path)
     except ValueError as error:
@@ -174,6 +177,24 @@ async def check_page(path: str, seconds: str | int = "") -> str:
         return f"Error: no such file: {path}"
     if target.suffix.lower() not in (".html", ".htm"):
         return f"Error: check_page is for .html pages; {path} is not one."
+    report = await _check_page_load(path, target, seconds)
+    steps = _web.parse_steps(interact) if interact else []
+    if not steps:
+        return report
+    interaction = await _web.run_interactions(target, steps)
+    if interaction is None:
+        return report + "\n\n[interaction not measured: Playwright is not installed]"
+    verdict = "PASS" if interaction.ok and not interaction.console_errors else "FIX NEEDED"
+    text = interaction.text()
+    if verdict == "FIX NEEDED" and "verdict: PASS" in report:
+        # The load was clean but the page does not WORK: the interaction
+        # verdict overrides, so the repair guard sends the model back.
+        report = report.replace("verdict: PASS", "verdict: FIX NEEDED (interaction)")
+    return report + f"\n\n[interaction] verdict: {verdict}\n{text}"
+
+
+async def _check_page_load(path: str, target, seconds: str | int = "") -> str:
+    """The load-time check (the original check_page body)."""
     try:
         window = max(1, min(int(str(seconds).strip() or DEFAULT_SECONDS), MAX_SECONDS))
     except ValueError:
@@ -216,8 +237,11 @@ TOOLS = [
                      "loop runs, element/canvas counts and visible text. Run it after writing a "
                      "page and fix everything it lists before finishing."),
         args={"path": "workspace-relative path of the .html file",
-              "seconds": f"how long to let the page run before reporting (default {DEFAULT_SECONDS}, max {MAX_SECONDS})"},
-        optional=frozenset({"seconds"}),
+              "seconds": f"how long to let the page run before reporting (default {DEFAULT_SECONDS}, max {MAX_SECONDS})",
+              "interact": ("optional steps to DRIVE the page, one per line: click <selector> · type <selector> <text> · "
+                           "press <key> · drag <selector> <dx> <dy> · wait <ms> · expect <selector> visible|count <n>|text <substring> "
+                           "· expect changed. Each action reports whether the DOM changed.")},
+        optional=frozenset({"seconds", "interact"}),
         tier="read", func=check_page,
     ),
 ]

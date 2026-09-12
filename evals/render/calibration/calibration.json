@@ -1,0 +1,26 @@
+[
+  {
+    "id": "deck-good",
+    "file": "deck-good/review.pptx",
+    "kind": "deck",
+    "prompt": "Make a short sales-review deck from these regional totals (north 1420, south 850, east 580, west 410): a title slide, a slide with a chart of the numbers and the key takeaway, and a slide with three next steps. Add speaker notes.",
+    "score": 7,
+    "why": "One palette, aligned grid, short bullets, a real chart, notes on every slide; visibly machine-made (plain shapes, no imagery, generic type) — the anchor for 7."
+  },
+  {
+    "id": "deck-bad",
+    "file": "deck-bad/sales.pptx",
+    "kind": "deck",
+    "prompt": "Make a two-slide sales deck: what happened this quarter, and next steps.",
+    "score": 3,
+    "why": "Default template; slide 1's body is a wall of text that runs off the bottom of the placeholder; slide 2's body placeholder is empty; no notes. Content is nominally on topic, presentation is not — between the 4 and 1 anchors."
+  },
+  {
+    "id": "page-dashboard",
+    "file": "page-dashboard/dashboard.html",
+    "kind": "page",
+    "prompt": "Make a small single-file dashboard page: a header with a live clock, a counter card with a button that increments it, a notes card with a textarea, and an about card. It should look clean and work on a phone too.",
+    "score": 6,
+    "why": "Clean dark layout, responsive grid, the clock and the counter work (the after-interaction images show the count at 1 and the typed text); plain and sparse, no visual identity — a bit under the 7 anchor."
+  }
+]

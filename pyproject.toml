@@ -29,6 +29,12 @@ dependencies = [
     # deliverables in the eval set (see evals/EVALS.md, "office").
     "openpyxl>=3.1",         # .xlsx read/write (cells, formulas, sheets)
     "python-pptx>=1.0",      # .pptx read/write (slides, text, images)
+    # Added 2026-09-11 for the verifiers, the renderer and the new skills:
+    "python-docx>=1.1",      # .docx read/write (the docx skill; docx verifier)
+    "pymupdf>=1.24",         # rasterize soffice's PDFs to PNG (pdftoppm is not installed)
+    "pandas>=2.2",           # data wrangling (xlsx + data-analysis skills; eval checkers)
+    "matplotlib>=3.9",       # charts to PNG (data-analysis skill)
+    "playwright>=1.47",      # headless Chromium: page interactions, screenshots, check_page fallback
 ]
 
 # Development-only dependencies, installed with `uv pip install -e ".[dev]"`.

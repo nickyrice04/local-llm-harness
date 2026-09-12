@@ -194,9 +194,24 @@ export function show(container: HTMLElement): ViewHandle {
   // ---- MCP servers (server-side, /api/mcp) ------------------------------
   const mcpCard = el("div.card", {}, el("p.muted", {}, "loading…"));
 
+  interface McpToolSpec { name: string; public: string; description: string; schema: any }
   interface McpRow {
     name: string; command: string; args: string[]; connected: boolean;
-    tools: string[]; error: string;
+    tools: string[]; tool_specs?: McpToolSpec[]; error: string; source?: string;
+  }
+  interface McpFile { path: string; exists: boolean; error: string }
+  let mcpFile: McpFile | null = null;
+
+  /** One tool's real schema (from listTools), as a readable list: each
+   *  property with its type, whether it is required, and its description. */
+  function schemaLines(spec: McpToolSpec): HTMLElement {
+    const props = (spec.schema?.properties ?? {}) as Record<string, any>;
+    const required = new Set<string>(spec.schema?.required ?? []);
+    const rows = Object.entries(props).map(([key, p]) =>
+      el("div.muted", {}, `${key}${required.has(key) ? "" : "?"}: ${p?.type ?? "any"}${p?.description ? " — " + String(p.description).slice(0, 140) : ""}`));
+    return el("div.mcp-tool", {},
+      el("div", {}, el("code", {}, spec.public), spec.description ? el("span.muted", {}, " — " + spec.description.slice(0, 200)) : null),
+      ...(rows.length ? rows : [el("div.muted", {}, "(no arguments)")]));
   }
 
   interface McpPreset {
@@ -207,9 +222,10 @@ export function show(container: HTMLElement): ViewHandle {
   async function loadMcp(): Promise<void> {
     try {
       const [servers, presets] = await Promise.all([
-        get<{ servers: McpRow[] }>("/api/mcp"),
+        get<{ servers: McpRow[]; config_file?: McpFile }>("/api/mcp"),
         get<{ presets: McpPreset[] }>("/api/mcp/presets"),
       ]);
+      mcpFile = servers.config_file ?? null;
       renderMcp(servers.servers, presets.presets);
     } catch {
       mount(mcpCard, el("p.muted", {}, "MCP settings need the server."));
@@ -240,20 +256,38 @@ export function show(container: HTMLElement): ViewHandle {
       // line of its own: the detail is a command line or a tool list and
       // can be long, so it wraps anywhere on its own line instead of
       // pushing the buttons off the card (measured on a full path).
-      ...(servers.length ? servers.flatMap((s) => [
-        el("div.row", {},
-          el("span.badge", { className: `badge ${s.connected ? "done" : "failed"}` },
-             s.connected ? "connected" : "down"),
-          el("strong.mcp-name", {}, s.name),
-          el("button", { onclick: async () => { await post(`/api/mcp/${s.name}/reconnect`, {}); loadMcp(); } }, "Reconnect"),
-          el("button.danger", { onclick: async () => {
-            await fetch(`/api/mcp/${encodeURIComponent(s.name)}`, { method: "DELETE" }); loadMcp();
-          } }, "Remove"),
-        ),
-        el("div.muted.mcp-detail", {}, s.connected
-          ? `${s.tools.length} tools: ${s.tools.slice(0, 6).join(", ")}${s.tools.length > 6 ? "…" : ""}`
-          : `${s.error ? s.error + " — " : ""}${s.command} ${s.args.join(" ")}`),
-      ]) : [el("p.muted", {}, "No servers configured.")]),
+      ...(servers.length ? servers.flatMap((s) => {
+        // The tools with their real schemas, behind a toggle.
+        const specs = el("div.mcp-tools", { hidden: true }, ...(s.tool_specs ?? []).map(schemaLines));
+        const toggle = el("button", { onclick: () => { specs.hidden = !specs.hidden; toggle.textContent = specs.hidden ? `${s.tools.length} tools ▸` : `${s.tools.length} tools ▾`; } },
+                          `${s.tools.length} tools ▸`);
+        return [
+          el("div.row", {},
+            el("span.badge", { className: `badge ${s.connected ? "done" : "failed"}` },
+               s.connected ? "connected" : "down"),
+            el("strong.mcp-name", {}, s.name),
+            s.source === "file" ? el("span.muted", { title: mcpFile?.path ?? "" }, "from mcp.json") : null,
+            s.connected && s.tools.length ? toggle : null,
+            el("button", { onclick: async () => { await post(`/api/mcp/${s.name}/reconnect`, {}); loadMcp(); } }, "Reconnect"),
+            s.source === "file" ? null : el("button.danger", { onclick: async () => {
+              await fetch(`/api/mcp/${encodeURIComponent(s.name)}`, { method: "DELETE" }); loadMcp();
+            } }, "Remove"),
+          ),
+          el("div.muted.mcp-detail", {}, s.connected
+            ? `${s.tools.length} tools: ${s.tools.slice(0, 6).join(", ")}${s.tools.length > 6 ? "…" : ""}`
+            : `${s.error ? s.error + " — " : ""}${s.command} ${s.args.join(" ")}`),
+          specs,
+        ];
+      }) : [el("p.muted", {}, "No servers configured.")]),
+      // The hand-editable config file (Claude Code's mcpServers shape).
+      el("div.row", {},
+        el("span.muted", {}, mcpFile
+          ? `${mcpFile.exists ? "Config file" : "Config file (create it)"}: ${mcpFile.path}${mcpFile.error ? " — " + mcpFile.error : ""}`
+          : "Config file: ~/.seymour/mcp.json"),
+        el("button", { title: 'Re-read mcp.json ({"mcpServers": {"name": {"command": "npx", "args": [...], "env": {}}}}) and reconnect its servers',
+                       onclick: async () => { status.textContent = "reloading…"; try { const r = await post<{ servers: any[]; error: string }>("/api/mcp/reload", {});
+                         status.textContent = r.error || `${r.servers.length} server(s) from the file`; } catch (e: any) { status.textContent = e?.message ?? "failed"; } loadMcp(); } },
+           "Reload file")),
       el("h3", {}, "Add a server"),
       el("div.row", {}, name, command, args, el("button.primary", { onclick: add }, "Add"), status),
       el("h3", {}, "Presets"),

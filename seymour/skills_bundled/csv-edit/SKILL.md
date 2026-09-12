@@ -1,6 +1,6 @@
 ---
 name: csv-edit
-description: Read, transform and write CSV files with Python's csv module (pandas is not installed); re-read the output to verify header, row count and sample values.
+description: Read, transform and write small CSV files with the csv module (for analysis and cleaning at scale, load the data-analysis skill — pandas is installed); re-read the output to verify header, row count and sample values.
 ---
 
 # CSV editing that survives a check

@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0;font:16px system-ui;background:#111827;color:#f9fafb;display:flex;flex-direction:column;min-height:100vh}
+header{padding:16px 24px;background:#1f2937;display:flex;justify-content:space-between;align-items:center}
+main{flex:1;display:grid;gap:16px;padding:24px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:#1f2937;border-radius:12px;padding:20px}button{font:inherit;padding:8px 14px;border:0;border-radius:8px;background:#0e7c86;color:#fff}
+</style></head><body><header><strong>Dashboard</strong><span id="clock">--:--:--</span></header>
+<main><div class="card"><h2>Counter</h2><p id="count">0</p><button id="inc">Add one</button></div>
+<div class="card"><h2>Notes</h2><textarea id="notes" rows="4" style="width:100%"></textarea></div>
+<div class="card"><h2>About</h2><p>A calibration page for the judge.</p></div></main>
+<script>let n=0;document.getElementById('inc').onclick=()=>{n++;document.getElementById('count').textContent=n};
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString()},1000);</script></body></html>
