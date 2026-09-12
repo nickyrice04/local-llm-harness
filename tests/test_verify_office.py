@@ -149,3 +149,26 @@ async def test_the_screenshot_set_covers_viewports_scroll_and_interactions(tmp_p
     names = sorted(Path(p).name for p in out["images"])
     assert {"desktop-top.png", "desktop-middle.png", "desktop-bottom.png", "phone-top.png", "after-01.png", "after-02.png"} <= set(names)
     assert Path(out["console"]).exists() and out["interaction"] is not None and out["interaction"].ok
+
+
+@needs_soffice
+async def test_a_workbook_a_command_produced_is_verified_and_verify_file_works_on_demand(monkeypatch):
+    """The real way deliverables are made — a script — reaches the verifier:
+    run_command's result carries the workbook's recalculated verdict, and
+    verify_file answers on demand without soffice in the sandbox."""
+    from seymour import run_executor, tools
+    from seymour.db import init_db
+    init_db()
+    import uuid
+    log = run_executor.RunLog(str(uuid.uuid4()), run_executor.CHAT_POLICY)
+    catalog = run_executor.catalog_for(run_executor.CHAT_POLICY)
+    script = ("from openpyxl import Workbook\nwb=Workbook(); ws=wb.active; ws['A1']=1; ws['A2']='=A1/0'; wb.save('made.xlsx')")
+    result = await run_executor._execute(log, catalog, "run_command", {"command": f"python -c \"{script}\""})
+    assert "exit code 0" in result and "[auto-check made.xlsx] verdict: FIX NEEDED" in result and "#DIV/0!" in result
+    assert log.last_check and log.last_check["path"] == "made.xlsx" and log.last_check["verdict"] == "FIX NEEDED"
+    pages: dict = {}
+    run_executor._track_page(pages, "run_command", {}, log)
+    assert "made.xlsx" in run_executor._failing_pages(pages)               # the repair guard follows it
+    on_demand = await tools.execute("verify_file", {"path": "made.xlsx"})
+    assert "verdict: FIX NEEDED" in on_demand and "#DIV/0!" in on_demand
+    assert "No verifier" in await tools.execute("verify_file", {"path": "orders.csv"}) or (await tools.execute("verify_file", {"path": "orders.csv"})).startswith("Error")

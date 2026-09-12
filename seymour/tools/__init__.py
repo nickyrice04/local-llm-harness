@@ -96,13 +96,13 @@ def describe_call(tool: Tool, args: dict) -> str:
 # --------------------------------------------------------------------------- #
 
 from seymour.tools import (  # noqa: E402  (after Tool)
-    ask, files, git, images, jobs, memory, probe, shell, skills_tool, structure, subagent, todo, web)
+    ask, files, git, images, jobs, memory, probe, shell, skills_tool, structure, subagent, todo, verify_tool, web)
 
 TOOLS: dict[str, Tool] = {
     tool.name: tool
     for tool in [*web.TOOLS, *files.TOOLS, *structure.TOOLS, *shell.TOOLS, *jobs.TOOLS, *memory.TOOLS,
-                 *skills_tool.TOOLS, *probe.TOOLS, *todo.TOOLS, *ask.TOOLS, *images.TOOLS, *git.TOOLS,
-                 *subagent.TOOLS]
+                 *skills_tool.TOOLS, *probe.TOOLS, *verify_tool.TOOLS, *todo.TOOLS, *ask.TOOLS, *images.TOOLS,
+                 *git.TOOLS, *subagent.TOOLS]
 }
 
 

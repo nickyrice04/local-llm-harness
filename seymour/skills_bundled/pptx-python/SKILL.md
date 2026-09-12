@@ -100,14 +100,17 @@ width OR height to keep the aspect ratio.
 ## Verify by rendering (required)
 
 1. `run_command python make_deck.py` — fix and rerun on any traceback.
-2. Render and count:
-   `run_command /opt/homebrew/bin/soffice --headless --convert-to pdf --outdir render review.pptx && python -c "import pymupdf; d=pymupdf.open('render/review.pdf'); print(len(d),'pages'); [p.get_pixmap(dpi=100).save(f'render/slide-{i+1:02d}.png') for i,p in enumerate(d)]"`
+2. `{"tool": "verify_file", "args": {"path": "review.pptx"}}` — the harness
+   checks every slide for empty placeholders and text that cannot fit its
+   box, counts the slides, and renders the deck to PNGs (outside your
+   sandbox — do NOT run soffice yourself, it cannot run there). Fix
+   everything it names and call it again.
 3. Check structure: `python -c "from pptx import Presentation; p=Presentation('review.pptx'); print(len(p.slides)); [print(i+1, [sh.text_frame.text[:40] for sh in s.shapes if sh.has_text_frame], 'notes' if s.has_notes_slide and s.notes_slide.notes_text_frame.text.strip() else 'NO NOTES') for i,s in enumerate(p.slides)]"`
-4. If the model can see (read_image works), look at `render/slide-01.png`
-   and one content slide: text cut off at a box edge, overlapping shapes
-   or a blank slide means fix and re-render.
+4. If you can see (read_image works), look at one of the rendered PNGs
+   the report names: text cut off at a box edge, overlapping shapes or a
+   blank slide means fix and re-verify.
 
-The harness runs the same checks after every save (empty placeholders,
-estimated overflow, slide count, a render to `.seymour/artifacts/render/`)
-and appends the verdict to your tool result. Do not finish while it says
-FIX NEEDED. Report the slide list you verified and where the PNGs are.
+The harness also runs the same checks on its own after any command that
+writes a deck and appends the verdict to the result. Do not finish while
+it says FIX NEEDED. Report the slide list you verified and where the
+PNGs are.

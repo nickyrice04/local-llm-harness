@@ -120,14 +120,14 @@ month column in Data (`=TEXT(B2,"yyyy-mm")`) and a header row of months.
 
 ## Verify by recalculating (required)
 
-```
-run_command: python -c "import subprocess,tempfile,openpyxl,os; t=tempfile.mkdtemp(); subprocess.run(['/opt/homebrew/bin/soffice','--headless','--convert-to','xlsx','--outdir',t,'report.xlsx'],capture_output=True,timeout=120); wb=openpyxl.load_workbook(os.path.join(t,'report.xlsx'),data_only=True); s=wb['Summary']; print(wb.sheetnames); [print(r) for r in s.iter_rows(min_row=1,max_row=s.max_row,values_only=True)]"
-```
-
-LibreOffice recalculates every formula; `data_only=True` then shows the
-REAL values. Every summary cell must show a number — `None`, `#REF!`,
-`#NAME?`, `#DIV/0!` or `0` where data exists means a wrong range or name:
-fix the formula and save again. Compare two or three totals against a
-pandas `groupby` of the same data before you say done. The harness runs
-this same recalculation after every save and appends its verdict to your
-tool result; do not finish while it says FIX NEEDED.
+Call `verify_file` on the workbook: `{"tool": "verify_file", "args": {"path": "report.xlsx"}}`.
+The harness recalculates every formula with LibreOffice (outside your
+sandbox — do NOT run soffice yourself, it cannot run there) and reads the
+real values back. The report names every formula that produced an error
+(`#REF!`, `#NAME?`, `#DIV/0!`) or nothing, and shows sample values.
+A `0` where data exists means a wrong range: fix the formula, save, call
+`verify_file` again. Then compare two or three totals against a pandas
+`groupby` of the same data (`run_command python -c "..."`) before you say
+done. The harness also runs this check on its own after any command that
+writes a workbook and appends the verdict to the result; do not finish
+while it says FIX NEEDED.

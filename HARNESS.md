@@ -456,3 +456,12 @@ ships in the same one-registry / one-executor / append-only-log spine.
   found by the first smoke run of the new set). **The model profile**
   (`engine/profile.py`) measures tools-in-template, the thinking channel
   and the system prompt's token cost per model and drives the defaults.
+- **Deliverables made by commands are verified too** (2026-09-11, late).
+  The first xlsx eval run wrote its workbook through python thirty
+  times and the xlsx verifier never fired — auto_check followed only the
+  file tools. The executor now snapshots the workspace's .xlsx / .pptx /
+  .docx / .html before `run_command` or `shell` and verifies what the
+  command changed; the repair guard follows those files. And `soffice`
+  cannot run inside the sandbox (exit 0, no output, 0.17 s — measured),
+  so `verify_file` runs the harness's verifiers on demand, outside it,
+  and the skills call that instead of soffice.

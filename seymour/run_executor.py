@@ -999,6 +999,12 @@ async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
     # before and after, diffed here (the tool result only shows the new
     # region). Bounded, best effort, never a reason for the call to fail.
     before_text = _snapshot(path) if name in _DIFFED else None
+    # Deliverables are usually MADE BY A COMMAND (a script writes the
+    # workbook or the deck), not by a file tool — so the harness watches
+    # what a command changed and verifies those files too (measured
+    # 2026-09-11: a run wrote orders_clean.xlsx through python thirty
+    # times and the xlsx verifier never fired once).
+    produced_before = _deliverables_snapshot() if name in _COMMAND_TOOLS else None
     result = await tools.execute(name, safe_args)
     # What the tool attached for the next message (read_image), if anything.
     log.last_attachments = tool_context.take_attachments()
@@ -1020,7 +1026,21 @@ async def _execute(log: RunLog, catalog: dict, name: str, args: dict,
         if check:
             result = result.rstrip() + "\n\n" + check["report"]
             log.event("auto_check", path=path, kind=check["kind"], verdict=check["verdict"])
-    log.last_check = {"path": path, **check} if check else None
+    if produced_before is not None:
+        for produced in _deliverables_changed(produced_before)[:MAX_PRODUCED_CHECKS]:
+            from seymour.tools import verify
+            try:
+                check = await verify.auto_check(produced)
+            except Exception as error:                  # a checker must never end a run
+                logger.warning("auto-check failed for %s: %s", produced, error)
+                check = None
+            if check:
+                result = result.rstrip() + "\n\n" + check["report"]
+                log.event("auto_check", path=produced, kind=check["kind"], verdict=check["verdict"], produced_by=name)
+                log.last_check = {"path": produced, **check}
+                # The card and the repair guard follow the produced file.
+                log.produced_paths = getattr(log, "produced_paths", []) + [produced]
+    log.last_check = {"path": path, **check} if check and path else getattr(log, "last_check", None)
     log.event("tool_result", tool=name, seconds=round(time.monotonic() - t0, 2),
               is_error=not ok, result=result)
     # The Code pane reads the file back on this; the tag in the result's
@@ -1040,15 +1060,23 @@ MAX_REPAIR_ROUNDS = 2
 
 
 def _track_page(pages: dict, name: str, args: dict, log: "RunLog") -> None:
-    """Remember the last check of every file this run wrote."""
+    """Remember the last check of every file this run wrote — or that a
+    command it ran produced (the repair guard follows both)."""
     path = str((args or {}).get("path") or "")
     if name in _FILE_WRITERS and path:
         pages[path] = getattr(log, "last_check", None) or {"verdict": "not measured", "report": ""}
+    for produced in getattr(log, "produced_paths", []) or []:
+        check = getattr(log, "last_check", None)
+        if check and check.get("path") == produced:
+            pages[produced] = check
+    log.produced_paths = []
 
 
 def _failing_pages(pages: dict) -> dict:
     """Files whose last check said FIX NEEDED (not-measured ones are not
-    the model's fault and never block the finish)."""
+    the model's fault and never block the finish). Office files count
+    the same as pages: a workbook whose formulas produce #REF! is not
+    a finished deliverable."""
     return {p: c for p, c in pages.items() if c and c.get("verdict") == "FIX NEEDED" and c.get("report")}
 
 
@@ -1076,6 +1104,36 @@ def _tool_result_frame(name: str, args: dict, result: str, log: "RunLog") -> dic
 # Tools whose result frame carries a before/after diff (the code card
 # already shows a whole written file; an edit needs the change itself).
 _DIFFED = {"edit_lines", "replace_in_file", "append_file"}
+# Tools that run programs — the ones that PRODUCE deliverables indirectly.
+_COMMAND_TOOLS = {"run_command", "shell"}
+# Files a command may have produced that the verifiers understand.
+_DELIVERABLE_SUFFIXES = (".xlsx", ".pptx", ".docx", ".html", ".htm")
+MAX_PRODUCED_CHECKS = 3
+
+
+def _deliverables_snapshot() -> dict[str, float]:
+    """mtime of every checkable deliverable in the workspace (bounded walk)."""
+    from seymour.tools import paths
+    from seymour.tools.files import _walk
+    out: dict[str, float] = {}
+    try:
+        for file in _walk(paths.workspace()):
+            if file.suffix.lower() in _DELIVERABLE_SUFFIXES:
+                try:
+                    out[paths.display(file)] = file.stat().st_mtime
+                except OSError:
+                    continue
+            if len(out) >= 500:
+                break
+    except Exception:
+        pass
+    return out
+
+
+def _deliverables_changed(before: dict[str, float]) -> list[str]:
+    """Deliverables that are new or rewritten since the snapshot."""
+    after = _deliverables_snapshot()
+    return sorted(rel for rel, mtime in after.items() if before.get(rel) != mtime)
 # The diff shown in a card is bounded: enough to review, never a 4 MB file.
 DIFF_MAX_LINES = 300
 

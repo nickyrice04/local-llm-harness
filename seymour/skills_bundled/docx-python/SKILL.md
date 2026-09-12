@@ -69,8 +69,11 @@ run formatting), then save to a NEW name unless told to overwrite.
 
 1. Reload: `run_command python -c "from docx import Document; d=Document('report.docx'); print(len(d.paragraphs),'paragraphs',len(d.tables),'tables'); [print(p.style.name, '|', p.text[:60]) for p in d.paragraphs if p.style.name.startswith(('Heading','Title'))]"`
    — every heading you intended must appear with its style.
-2. Render: `run_command /opt/homebrew/bin/soffice --headless --convert-to pdf --outdir render report.docx && python -c "import pymupdf; d=pymupdf.open('render/report.pdf'); print(len(d),'pages'); [p.get_pixmap(dpi=100).save(f'render/page-{i+1:02d}.png') for i,p in enumerate(d)]"`
-   and, if you can see (read_image), look at page 1.
+2. `{"tool": "verify_file", "args": {"path": "report.docx"}}` — the harness
+   loads the document and renders its pages to PNGs (outside your sandbox
+   — do NOT run soffice yourself, it cannot run there); if you can see
+   (read_image), look at page 1.
 
-The harness runs the same load-and-render after every save and appends
-the verdict; do not finish while it says FIX NEEDED.
+The harness also runs the same load-and-render on its own after any
+command that writes a document and appends the verdict; do not finish
+while it says FIX NEEDED.
