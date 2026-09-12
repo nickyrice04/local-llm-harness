@@ -4,10 +4,15 @@ on the same llama-server, scored the same way.
     .venv/bin/python evals/compare/run.py --label first            # both
     .venv/bin/python evals/compare/run.py --harness seymour --only html-desktop-os
 
-Seymour side: each task becomes a discrete agent task (POST /api/tasks —
-Tier 2, thinking on by default, no approval gate, the same loop the
-primary agent runs). Its files are placed in Seymour's real workspace
-(the tools are confined there) and removed afterwards.
+Seymour side (since 2026-09-11): each task is a CHAT RUN (POST /api/chat,
+mode chat) — the executor a person actually uses: the context economy,
+the 60-call budget, the verifiers and the repair guard, tool cards. The
+runner consumes the SSE stream, auto-approves the write gate, answers
+any ask_user_question with "proceed on your best judgement", and reads
+the run's trace afterwards for tool calls, peak prompt size and how many
+compactions fired. Thinking is sent ON per message for parity with dsh.
+Files are placed in Seymour's real workspace (the tools are confined
+there) and removed afterwards.
 
 dsh side: the published Python SDK runs `examples/jsonrpc-agent/minimal.py`
 (persistent bash + str_replace_editor, danger-full-access) in a fresh
@@ -40,7 +45,9 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tasks import TASKS, Task  # noqa: E402
 
-BASE = "http://127.0.0.1:8765"
+# The app under test (SEYMOUR_BASE overrides; 8765 is the dev/setup port,
+# 8000 the launch.json "seymour" config that loads the active model).
+BASE = os.environ.get("SEYMOUR_BASE", "http://127.0.0.1:8765")
 ENGINE = "http://127.0.0.1:8080"      # llama-server (the eval's default engine)
 # Where dsh's SDK sends its OpenAI-compatible calls. Both of Seymour's
 # engines speak that API: llama-server on 8080, the MLX server on 8082
@@ -51,7 +58,9 @@ REPO = Path(__file__).resolve().parents[2]
 RESULTS = REPO / "evals" / "results"
 # The dsh SDK lives in its own venv (it pins pydantic); the checked-out
 # deepseek-harness repo supplies the minimal composition.
-DSH_VENV = Path(os.environ.get("DSH_VENV", "/private/tmp/claude-501/-Users-nickyrice-Documents-seymour-guide/8f573ded-3685-478f-b66f-b72a4ea2276a/scratchpad/dsh/dsh-venv"))
+# Recreated 2026-09-11 beside the repo (the old scratch venv was gone):
+#   uv venv ../.dsh-venv --python 3.12 && uv pip install --python ../.dsh-venv/bin/python deepseek-harness-sdk
+DSH_VENV = Path(os.environ.get("DSH_VENV", REPO.parent / ".dsh-venv"))
 DSH_REPO = Path(os.environ.get("DSH_REPO", REPO.parent / "deepseek-harness-src"))
 
 
@@ -110,6 +119,21 @@ def keep_artifacts(task: Task, workspace: Path, dest: Path) -> list[str]:
     return kept
 
 
+def render_for_judge(task: Task, workspace: Path, dest: Path) -> dict:
+    """The task's `render` field → deterministic PNGs under dest/render/
+    (evals/render), plus the interaction transcript for the packet. The
+    judge subagent reads these later, in one pass at the end of the run."""
+    if not task.render:
+        return {}
+    from evals.render import render_sync
+    artifact = workspace / task.render["artifact"]
+    out = render_sync(artifact, dest / "render", task.render.get("steps"))
+    if out.get("interaction"):
+        (dest / "render" / "interaction.txt").write_text(out["interaction"], encoding="utf-8")
+    return {"images": len(out.get("images", [])), "notes": out.get("notes", []),
+            "interaction_ok": out.get("interaction_ok")}
+
+
 def place_setup(task: Task, workspace: Path) -> None:
     for rel, text in task.setup.items():
         path = workspace / rel
@@ -134,34 +158,66 @@ def clean_task_files(task: Task, workspace: Path) -> None:
 
 # ------------------------------------------------------------- Seymour
 async def run_seymour(task: Task, model_id: str) -> dict:
-    """One discrete agent task through the live app."""
+    """One CHAT run through the live app (the executor a person uses)."""
     clean_task_files(task, WORKSPACE)
     place_setup(task, WORKSPACE)
     started = time.monotonic()
-    async with httpx.AsyncClient(base_url=BASE, timeout=60) as c:
-        created = (await c.post("/api/tasks", json={"goal": task.prompt, "session_id": ""})).json()
-        task_id = created["id"]
-        status = "timeout"
-        while time.monotonic() - started < task.timeout_s:
-            rows = [t for t in (await c.get("/api/tasks")).json()["tasks"] if t["id"] == task_id]
-            if rows and rows[0]["status"] in ("done", "failed", "cancelled", "paused", "blocked"):
-                status = rows[0]["status"]
-                break
-            await asyncio.sleep(4)
-        else:
-            await c.post(f"/api/tasks/{task_id}/cancel")
-        journal = (await c.get(f"/api/tasks/{task_id}/journal")).json()
-        result = next((t.get("result", "") for t in (await c.get("/api/tasks")).json()["tasks"]
-                       if t["id"] == task_id), "")
+    status, final, run_id, session_id = "timeout", "", "", ""
+    async with httpx.AsyncClient(base_url=BASE, timeout=httpx.Timeout(60, read=task.timeout_s + 60)) as c:
+        body = {"message": task.prompt, "mode": "chat", "inference": {"thinking": "on"}}
+        try:
+            async with c.stream("POST", "/api/chat", json=body) as response:
+                buffer = ""
+                async for chunk in response.aiter_text():
+                    buffer += chunk
+                    while "\n\n" in buffer:
+                        frame_text, buffer = buffer.split("\n\n", 1)
+                        if not frame_text.startswith("data: "):
+                            continue
+                        payload = frame_text[6:]
+                        if payload == "[DONE]":
+                            status = "done" if status == "timeout" else status
+                            break
+                        frame = json.loads(payload)
+                        if "run_id" in frame:
+                            run_id = frame["run_id"]
+                        if "session_id" in frame:
+                            session_id = frame["session_id"]
+                        if "approval" in frame:
+                            # Unattended: the sandbox is the boundary, as for a task.
+                            await c.post(f"/api/runs/{frame['approval']['run_id']}/approve", json={"allow": True})
+                        if "question" in frame:
+                            await c.post(f"/api/runs/{frame['question']['run_id']}/answer",
+                                         json={"answer": "Proceed on your best judgement; do not ask again."})
+                        if "delta" in frame:
+                            final += frame["delta"]
+                        if "error" in frame:
+                            status = "failed" if frame["error"] != "stopped" else "cancelled"
+                    if time.monotonic() - started > task.timeout_s:
+                        status = "timeout"
+                        if run_id:
+                            await c.post(f"/api/runs/{run_id}/cancel")
+                        break
+        except (httpx.HTTPError, json.JSONDecodeError) as error:
+            status, final = "failed", f"{type(error).__name__}: {error}"
+        trace = (await c.get(f"/api/runs/{run_id}")).json() if run_id else {"events": [], "stats": {}}
     seconds = round(time.monotonic() - started, 1)
+    events = trace.get("events", [])
+    context = (trace.get("stats") or {}).get("context") or {}
+    tool_calls = sum(1 for e in events if e["type"] == "tool_call")
+    compactions = sum(1 for e in events if e["type"] == "context" and e["data"].get("what") == "compact")
     value, rows = score(task, WORKSPACE)
     runtime = runtime_check(task, WORKSPACE)
-    kept = keep_artifacts(task, WORKSPACE, RESULTS / f"compare-{LABEL}" / "seymour" / task.id)
+    dest = RESULTS / f"compare-{LABEL}" / "seymour" / task.id
+    kept = keep_artifacts(task, WORKSPACE, dest)
+    rendered = render_for_judge(task, WORKSPACE, dest)
     clean_task_files(task, WORKSPACE)
     return {"harness": "seymour", "task": task.id, "category": task.category,
             "status": status, "seconds": seconds, "score": round(value, 3),
-            "tool_calls": sum(1 for s in journal if s["kind"] == "tool_call"),
-            "checks": rows, "artifacts": kept, "runtime": runtime, "final": (result or "")[:400]}
+            "tool_calls": tool_calls, "checks": rows, "artifacts": kept, "runtime": runtime,
+            "final": (final or "")[:400], "run_id": run_id, "session_id": session_id,
+            "peak_prompt_tokens": context.get("peak_tokens"), "compactions": compactions,
+            "spills": context.get("spills"), "prunes": context.get("prunes"), "render": rendered}
 
 
 # ------------------------------------------------------------- dsh
@@ -200,32 +256,56 @@ def run_dsh(task: Task, model_id: str) -> dict:
     seconds = round(time.monotonic() - started, 1)
     value, rows = score(task, workspace)
     runtime = runtime_check(task, workspace)
-    kept = keep_artifacts(task, workspace, RESULTS / f"compare-{LABEL}" / "dsh" / task.id)
+    dest = RESULTS / f"compare-{LABEL}" / "dsh" / task.id
+    kept = keep_artifacts(task, workspace, dest)
+    rendered = render_for_judge(task, workspace, dest)
     return {"harness": "dsh", "task": task.id, "category": task.category,
             "status": status, "seconds": seconds, "score": round(value, 3),
-            "tool_calls": calls, "checks": rows, "artifacts": kept, "runtime": runtime, "final": final[:400]}
+            "tool_calls": calls, "checks": rows, "artifacts": kept, "runtime": runtime, "final": final[:400],
+            "render": rendered}
 
 
 # ------------------------------------------------------------- report
 ENGINE_NAME = "llama-server"           # replaced by /api/status's engine_name at run time
 
 
+def _judge_scores() -> dict:
+    """The judge's verdicts for this label, if the packets were judged
+    (evals/judge/packet.py --collect): {task: {harness: overall}}."""
+    path = RESULTS / f"judge-{LABEL}.json"
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return {}
+    return {task: {h: v.get("overall") for h, v in row.items() if isinstance(v, dict)}
+            for task, row in (data.get("tasks") or {}).items()}
+
+
 def report(records: list[dict], model_id: str, path: Path) -> str:
     by = {(r["harness"], r["task"]): r for r in records}
     harnesses = sorted({r["harness"] for r in records})
+    judged = _judge_scores()
+    # The judge's column is SEPARATE from the machine score — never averaged in.
     lines = [f"# Harness comparison — {LABEL} — {date.today()}", "",
              f"Model: `{model_id}` on {ENGINE_NAME} (thinking on for both). "
-             f"Score = fraction of programmatic checks passed.", "",
+             f"Score = fraction of programmatic checks passed (task set v2, 2026-09-11). "
+             f"Judge = the blind vision subagent's 1–10 (evals/judge), shown separately.", "",
              "| task | category | " + " | ".join(f"{h} score" for h in harnesses)
+             + " | " + " | ".join(f"{h} judge" for h in harnesses)
              + " | " + " | ".join(f"{h} time" for h in harnesses)
              + " | " + " | ".join(f"{h} tools" for h in harnesses) + " |",
-             "|---|---|" + "---|" * (3 * len(harnesses))]
+             "|---|---|" + "---|" * (4 * len(harnesses))]
     for task in TASKS:
         cells = [task.id, task.category]
-        for kind in ("score", "seconds", "tool_calls"):
+        for kind in ("score", "judge", "seconds", "tool_calls"):
             for h in harnesses:
                 r = by.get((h, task.id))
-                if r is None:
+                if kind == "judge":
+                    value = (judged.get(task.id) or {}).get(h)
+                    cells.append(str(value) if value is not None else "—")
+                elif r is None:
                     cells.append("—")
                 elif kind == "score":
                     cells.append(f"{r['score']:.2f}" + ("" if r["status"] == "done" else f" ({r['status']})"))
@@ -246,6 +326,13 @@ def report(records: list[dict], model_id: str, path: Path) -> str:
             lines.append(f"- {'✅' if c['ok'] else '❌'} {c['name']} — {c['detail']}")
         if r.get("runtime"):
             lines.append(f"- runtime (headless load): {r['runtime']}")
+        if r.get("peak_prompt_tokens") is not None:
+            lines.append(f"- context economy: peak ~{r['peak_prompt_tokens']} prompt tokens · "
+                         f"{r.get('compactions', 0)} compaction(s) · {r.get('spills', 0)} spill(s) · {r.get('prunes', 0)} prune(s)")
+        if r.get("render"):
+            lines.append(f"- rendered for the judge: {r['render'].get('images', 0)} image(s)"
+                         + (f" · interaction {'ok' if r['render'].get('interaction_ok') else 'FAILED'}" if r['render'].get('interaction_ok') is not None else "")
+                         + (f" · {r['render']['notes']}" if r['render'].get('notes') else ""))
         for a in r["artifacts"]:
             lines.append(f"- artifact: `results/{a}`")
         if r["final"]:
@@ -278,8 +365,11 @@ async def main() -> None:
     if not status.get("capabilities"):
         raise SystemExit("load a model first (Models tab)")
     model_id = status["capabilities"]["model_id"]
-    # Parity: thinking follows each run kind's default (agent steps: on).
+    # Parity: Seymour's chat runs send thinking ON per message (dsh's runs
+    # think, since llama-server ignores its reasoning_effort); the saved
+    # setting stays "auto" so nothing latches onto the person's chats.
     httpx.post(f"{BASE}/api/inference", json={"thinking": "auto"}, timeout=10)
+    print(f"power: {subprocess.run(['pmset', '-g', 'ps'], capture_output=True, text=True).stdout.splitlines()[0].strip()}")
 
     RESULTS.mkdir(exist_ok=True)
     records: list[dict] = []

@@ -20,6 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import run as runner                     # noqa: E402  (report + RESULTS)
 from tasks import TASKS                   # noqa: E402
+from tasks_v1 import TASKS as TASKS_V1    # noqa: E402  (labels from before 2026-09-11)
 
 
 def main() -> None:
@@ -32,7 +33,8 @@ def main() -> None:
     runner.LABEL = args.label
     path = next(p for p in sorted(runner.RESULTS.glob(f"compare-{args.label}-*.json")))
     data = json.loads(path.read_text())
-    by_id = {t.id: t for t in TASKS}
+    # Labels from before 2026-09-11 were scored on the first set.
+    by_id = {t.id: t for t in (TASKS + TASKS_V1)}
     for record in data["records"]:
         task = by_id.get(record["task"])
         if task is None or not record["artifacts"] or (only and task.id not in only):
