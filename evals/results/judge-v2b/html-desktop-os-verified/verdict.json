@@ -1,0 +1,17 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "Layout and visual polish at desktop width (spacing, alignment, colour)", "score": 8, "evidence": "A/01.png: a diagonal navy gradient wallpaper, a dark taskbar with a labelled '= Start' button and a clock; A/02.png's start menu has icons and generous padding; windows in A/03.png and A/06.png share a dark rounded chrome with minimise/close glyphs, and the calculator uses colour-coded keys (red C, blue operators). The one blemish is the calculator's bottom row in A/06.png, which has two '=' buttons side by side."},
+        {"name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)", "score": 8, "evidence": "A/15.png (1024 wide) and A/16.png (375 wide) keep the wallpaper, 'Start' button and clock correctly laid out with nothing clipped; only the empty desktop is exercised at those sizes."},
+        {"name": "The interactions asked for visibly work (compare the after-interaction images)", "score": 9, "evidence": "Start menu toggles (A/02.png, A/05.png, A/12.png); Notepad opens (A/03.png) and shows 'hello from the eval' (A/04.png); calculator reads '8' (A/07.png), '8/' (A/08.png), '8/2' (A/09.png), '4' (A/10.png). Drag and bring-to-front are visibly proven: in A/11.png the Notepad window has moved from (60,40) to (180,100), exactly the 120x60 drag, and now sits in front of the Calculator, whose content is dimmed as an inactive window; A/13.png shows About opening on top. The log's later '.window' click timeout is a harness selector issue, not a visible failure."},
+        {"name": "No console errors; nothing visibly broken", "score": 7, "evidence": "Console is empty and nothing is clipped in A/01.png-A/16.png, but the calculator keypad in A/06.png-A/10.png renders a duplicated '=' key in the last row, which is a visible bug (one of the two is redundant or mislabelled)."},
+        {"name": "Would a person use this?", "score": 7, "evidence": "It behaves like a small desktop: windows drag, stack and dim when inactive (A/11.png, A/13.png), the apps work, and the look is coherent; the duplicate '=' button (A/06.png) and the lack of taskbar entries for open windows (A/13.png taskbar shows only Start and the clock) are the things a user would notice."}
+      ],
+      "overall": 7,
+      "highest_leverage_fix": "Fix the calculator keypad's last row so there is a single '=' key (A/06.png shows two), then add taskbar buttons for open and minimised windows so a minimised window can be restored."
+    }
+  },
+  "winner": null,
+  "confidence": "high"
+}

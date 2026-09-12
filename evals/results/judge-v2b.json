@@ -1,0 +1,110 @@
+{
+ "label": "v2b",
+ "tasks": {
+  "html-desktop-os-verified": {
+   "seymour": {
+    "overall": 7,
+    "fix": "Fix the calculator keypad's last row so there is a single '=' key (A/06.png shows two), then add taskbar buttons for open and minimised windows so a minimised window can be restored.",
+    "criteria": [
+     {
+      "name": "Layout and visual polish at desktop width (spacing, alignment, colour)",
+      "score": 8,
+      "evidence": "A/01.png: a diagonal navy gradient wallpaper, a dark taskbar with a labelled '= Start' button and a clock; A/02.png's start menu has icons and generous padding; windows in A/03.png and A/06.png share a dark rounded chrome with minimise/close glyphs, and the calculator uses colour-coded keys (red C, blue operators). The one blemish is the calculator's bottom row in A/06.png, which has two '=' buttons side by side."
+     },
+     {
+      "name": "Holds up on the laptop and phone viewports (no overflow, no unreadable text)",
+      "score": 8,
+      "evidence": "A/15.png (1024 wide) and A/16.png (375 wide) keep the wallpaper, 'Start' button and clock correctly laid out with nothing clipped; only the empty desktop is exercised at those sizes."
+     },
+     {
+      "name": "The interactions asked for visibly work (compare the after-interaction images)",
+      "score": 9,
+      "evidence": "Start menu toggles (A/02.png, A/05.png, A/12.png); Notepad opens (A/03.png) and shows 'hello from the eval' (A/04.png); calculator reads '8' (A/07.png), '8/' (A/08.png), '8/2' (A/09.png), '4' (A/10.png). Drag and bring-to-front are visibly proven: in A/11.png the Notepad window has moved from (60,40) to (180,100), exactly the 120x60 drag, and now sits in front of the Calculator, whose content is dimmed as an inactive window; A/13.png shows About opening on top. The log's later '.window' click timeout is a harness selector issue, not a visible failure."
+     },
+     {
+      "name": "No console errors; nothing visibly broken",
+      "score": 7,
+      "evidence": "Console is empty and nothing is clipped in A/01.png-A/16.png, but the calculator keypad in A/06.png-A/10.png renders a duplicated '=' key in the last row, which is a visible bug (one of the two is redundant or mislabelled)."
+     },
+     {
+      "name": "Would a person use this?",
+      "score": 7,
+      "evidence": "It behaves like a small desktop: windows drag, stack and dim when inactive (A/11.png, A/13.png), the apps work, and the look is coherent; the duplicate '=' button (A/06.png) and the lack of taskbar entries for open windows (A/13.png taskbar shows only Start and the clock) are the things a user would notice."
+     }
+    ]
+   },
+   "winner": null,
+   "confidence": "high"
+  },
+  "pptx-from-data": {
+   "seymour": {
+    "overall": 7,
+    "fix": "Turn the label titles into point-making titles (e.g. 'North delivers 41% of Q1 revenue' on A/03.png) and add value labels plus a formatted axis to the chart, so the deck carries its message without the presenter reading bullets.",
+    "criteria": [
+     {
+      "name": "Visual consistency across slides (one palette, one type scale, aligned grid)",
+      "score": 9,
+      "evidence": "A/02.png-A/07.png use one system throughout: navy title and closing slides (A/02.png, A/07.png) with white heading and grey subtitle, and off-white content slides (A/03.png-A/06.png) with the same navy heading at the same top-left position, the same short teal rule under it, and teal chart bars in A/03.png that match the rule colour."
+     },
+     {
+      "name": "No overflow, no empty placeholders, nothing cut off",
+      "score": 8,
+      "evidence": "Nothing is clipped on any slide and no placeholder text remains; the four one-line bullets on A/05.png and A/06.png stop at mid-slide, leaving the lower half of each slide empty, and the takeaway column on A/03.png ends after three bullets with blank space below."
+     },
+     {
+      "name": "One idea per slide; titles state the point; text is readable at a glance",
+      "score": 7,
+      "evidence": "Each slide carries one topic and text is short and large (A/04.png shows four big figures: '$1,007,200', 'North', '+12.8%', '2,688' with small captions); but titles are labels ('Revenue by Region', 'Key Metrics', 'Risks & Observations') rather than statements, and A/05.png's 'West is smallest region (145,100)' lacks a currency sign so the bracketed number reads oddly."
+     },
+     {
+      "name": "The chart (if any) is built from the data, labelled, and readable",
+      "score": 7,
+      "evidence": "A/03.png: four teal bars (North ~412K, South ~265K, East ~185K, West ~145K) with an axis title 'Revenue ($)', region labels and gridlines, consistent with the '$412,500 (41%)' bullet beside it; the y-axis shows raw '450000'-style numbers with no thousands separators, the chart title is just 'Revenue', and there are no value labels on the bars."
+     },
+     {
+      "name": "Would a person present this?",
+      "score": 7,
+      "evidence": "Yes, as is: the numbers are correct and consistently formatted ('$1,007,200' on A/03.png and A/04.png), the palette is coherent, and nothing is broken; it reads as a clean but plainly machine-generated deck, with A/05.png and A/06.png half empty and no visual element beyond text."
+     }
+    ]
+   },
+   "winner": null,
+   "confidence": "high"
+  },
+  "xlsx-messy-cleanup": {
+   "seymour": {
+    "overall": 5,
+    "fix": "Widen the date column on the Data sheet so dates render instead of '###' (A/01.png), apply a currency/thousands number format and a bold header row to the Summary table (A/03.png), and anchor the chart so it sits on one page.",
+    "criteria": [
+     {
+      "name": "The summary sheet reads clearly (headers, formats, alignment, widths)",
+      "score": 5,
+      "evidence": "A/03.png: the Summary is a compact, correctly structured grid (Region rows East/North/South/West, columns 2026-01..2026-03, a Total column and a Total row) and every label fits its column, but the header row is unstyled plain text with no bold, fill or borders, so headers, body and totals all look alike."
+     },
+     {
+      "name": "Numbers are formatted (currency, thousands, dates) and totals are visible",
+      "score": 4,
+      "evidence": "A/01.png: amounts in the Data sheet carry thousands separators and two decimals ('1,040.00', '2,850.00'), but every date cell shows '###' because the column is too narrow; A/03.png: the Summary values are raw unformatted numbers ('10047.5', '16832.5', '41040') with no currency or thousands separator, though all totals (per region, per month, grand total 41040) are visible and add up."
+     },
+     {
+      "name": "The chart (if any) is labelled and matches the data",
+      "score": 6,
+      "evidence": "A/03.png-A/04.png: the bar chart has a title 'Total Amount by Region', axis titles 'Amount' and 'Region', region labels, and bar heights that match the table (East ~8050, North ~12170, South ~12050, West ~8770); but the chart is positioned across a page break so the rendered title is cut to 'Total Amount by Regio' on A/03.png and the West bar and 'Total' legend land alone on A/04.png."
+     },
+     {
+      "name": "Nothing is cut off, #ERROR-ed or empty where data is expected",
+      "score": 4,
+      "evidence": "No formula errors anywhere (A/03.png computes every cell), but A/01.png and A/02.png show '###' in all 48 date cells, and the chart is sliced in two between A/03.png and A/04.png."
+     },
+     {
+      "name": "Would a person send this to a colleague?",
+      "score": 5,
+      "evidence": "The content is right: the Summary (A/03.png) computes, the chart matches, and the Notes sheet (A/05.png) itemises seven cleaning steps with row counts ('Total rows removed: 5', 'Clean rows in Data sheet: 48', 'Original rows: 54'); but a colleague would immediately see the '###' date column (A/01.png) and the unformatted summary numbers, so it needs a tidy-up first."
+     }
+    ]
+   },
+   "winner": null,
+   "confidence": "high"
+  }
+ }
+}

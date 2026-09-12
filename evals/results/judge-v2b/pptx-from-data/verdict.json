@@ -1,0 +1,17 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "Visual consistency across slides (one palette, one type scale, aligned grid)", "score": 9, "evidence": "A/02.png-A/07.png use one system throughout: navy title and closing slides (A/02.png, A/07.png) with white heading and grey subtitle, and off-white content slides (A/03.png-A/06.png) with the same navy heading at the same top-left position, the same short teal rule under it, and teal chart bars in A/03.png that match the rule colour."},
+        {"name": "No overflow, no empty placeholders, nothing cut off", "score": 8, "evidence": "Nothing is clipped on any slide and no placeholder text remains; the four one-line bullets on A/05.png and A/06.png stop at mid-slide, leaving the lower half of each slide empty, and the takeaway column on A/03.png ends after three bullets with blank space below."},
+        {"name": "One idea per slide; titles state the point; text is readable at a glance", "score": 7, "evidence": "Each slide carries one topic and text is short and large (A/04.png shows four big figures: '$1,007,200', 'North', '+12.8%', '2,688' with small captions); but titles are labels ('Revenue by Region', 'Key Metrics', 'Risks & Observations') rather than statements, and A/05.png's 'West is smallest region (145,100)' lacks a currency sign so the bracketed number reads oddly."},
+        {"name": "The chart (if any) is built from the data, labelled, and readable", "score": 7, "evidence": "A/03.png: four teal bars (North ~412K, South ~265K, East ~185K, West ~145K) with an axis title 'Revenue ($)', region labels and gridlines, consistent with the '$412,500 (41%)' bullet beside it; the y-axis shows raw '450000'-style numbers with no thousands separators, the chart title is just 'Revenue', and there are no value labels on the bars."},
+        {"name": "Would a person present this?", "score": 7, "evidence": "Yes, as is: the numbers are correct and consistently formatted ('$1,007,200' on A/03.png and A/04.png), the palette is coherent, and nothing is broken; it reads as a clean but plainly machine-generated deck, with A/05.png and A/06.png half empty and no visual element beyond text."}
+      ],
+      "overall": 7,
+      "highest_leverage_fix": "Turn the label titles into point-making titles (e.g. 'North delivers 41% of Q1 revenue' on A/03.png) and add value labels plus a formatted axis to the chart, so the deck carries its message without the presenter reading bullets."
+    }
+  },
+  "winner": null,
+  "confidence": "high"
+}

@@ -1,0 +1,97 @@
+{
+ "label": "v2c",
+ "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+ "records": [
+  {
+   "harness": "seymour",
+   "task": "code-bug-across-files",
+   "category": "code",
+   "status": "done",
+   "seconds": 64.5,
+   "score": 0.8,
+   "tool_calls": 6,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "3 passed in 0.01s"
+    },
+    {
+     "name": "tests/test_inventory.py untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "data/stock.csv untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "the fix is in loader.py (the cause), not report.py (the symptom)",
+     "ok": true,
+     "detail": "loader changed=True, report changed=False"
+    },
+    {
+     "name": "the fix is minimal (1\u20133 lines of loader.py differ)",
+     "ok": false,
+     "detail": "5 lines differ"
+    }
+   ],
+   "artifacts": [
+    "compare-v2c/seymour/code-bug-across-files/loader.py"
+   ],
+   "runtime": "",
+   "final": "All three tests now pass.\n\n**Root cause:** The bug was in **`inv/loader.py`**. The `_int()` helper used `value.isdigit()`, which returns `False` for negative numbers (and strings with signs or whitespace). A negative quantity slipped through the loader as a string. Because Python's `dataclass` doesn't enforce types at runtime, `item.qty` remained a string and passed silently into downstream logic.",
+   "run_id": "005ea694-6132-4e1c-a539-cc97faecb5da",
+   "session_id": "3128546d-2561-470d-a1b3-d556a62a3a7f",
+   "peak_prompt_tokens": 6071,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  },
+  {
+   "harness": "seymour",
+   "task": "code-make-it-fast",
+   "category": "code",
+   "status": "done",
+   "seconds": 44.0,
+   "score": 1.0,
+   "tool_calls": 6,
+   "checks": [
+    {
+     "name": "bench.py untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "results identical (checksum unchanged)",
+     "ok": true,
+     "detail": "checksum 0ad4d523ce4bcdf9 vs original 0ad4d523ce4bcdf9"
+    },
+    {
+     "name": "at least 5\u00d7 faster than the original",
+     "ok": true,
+     "detail": "2238 ms \u2192 9 ms (254.3\u00d7)"
+    },
+    {
+     "name": "at least 20\u00d7 faster than the original",
+     "ok": true,
+     "detail": "2238 ms \u2192 9 ms (248.7\u00d7)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2c/seymour/code-make-it-fast/textstats.py"
+   ],
+   "runtime": "",
+   "final": "Here are the benchmark results:\n\n- **Before:** 2379.5 ms\n- **After:** 9.0 ms\n- **Checksum:** `0ad4d523ce4bcdf9` (unchanged)\n\nThe speedup comes from replacing the O(n\u00b2) `list` membership checks and repeated `.count()` loops with `collections.Counter` and `zip()` for bigrams, dropping the complexity to O(n).",
+   "run_id": "5d0a9730-03c8-4820-aa7f-934f8d9d19ba",
+   "session_id": "980115c6-a4d1-4afe-9499-16b7cff10df8",
+   "peak_prompt_tokens": 6414,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  }
+ ]
+}

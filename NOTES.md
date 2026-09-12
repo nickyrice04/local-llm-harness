@@ -1124,5 +1124,50 @@ solar system)." This round:
   - Two boot/run crashes caught only by the real run, now tested: the
     eval runner's import path (pytest's rootdir hid it) and a decorator
     that landed on a helper inserted above `lifespan`.
-  - EVAL v2 (Seymour vs dsh, same llama-server, thinking on both):
-    RESULTS TABLE PENDING — see evals/results/compare-v2-*.md.
+  - EVAL v2 (Seymour vs dsh, same llama-server, thinking on for both,
+    Seymour through the chat executor; `evals/results/compare-v2-*.md`,
+    `compare-v2b-*.md`, `compare-v2c-*.md`, judge verdicts in
+    `judge-v2*.json`). Three runs, because the first two found harness
+    bugs and the brief says act on the evidence:
+
+    | task | dsh score | dsh judge | dsh time | Seymour v2 (old exec) | Seymour v2b/v2c (fixed) | judge | time (v2b/c) |
+    |---|---|---|---|---|---|---|---|
+    | xlsx-messy-cleanup | 0.75 (timeout) | 2 | 960 s | 0.00 (2-reply write) | **1.00** | 5 | 185 s |
+    | pptx-from-data | 1.00 | 5 | 120 s | 0.88 (511 s, 36 tools) | **0.88** | 7 | 184 s |
+    | code-bug-across-files | 1.00 | — | 27 s | 1.00 | 0.80 (5-line fix) | — | 65 s |
+    | code-make-it-fast | 1.00 | — | 25 s | 1.00 | **1.00** | — | 44 s |
+    | html-desktop-os-verified | 1.00 (timeout) | 7 | 960 s | 1.00 | **1.00** | 7 | 314 s |
+    | audit-long-horizon | 1.00 | — | 146 s | 1.00 | **1.00** | — | 214 s |
+    | **mean** | **0.96** | 2/5/7 | 2238 s | 0.81 | **0.95** | 5/7/7 | ~1010 s |
+
+    Reading it honestly: (1) the machine scores are ABOVE the 40–70 %
+    target — the set is easier than intended for programmatic checks
+    once the checks were right; the discrimination lives in the judge's
+    column (a workbook whose formulas all say Err:522 scores 0.75 on
+    the aggregates check but 2 with the judge) and in the timeouts (dsh
+    hit 900 s on two of six; Seymour finished every task, longest 314 s).
+    (2) Seymour's v2 misses were the executor's: the two-reply write
+    (fixed the same night), 36 tool calls on the deck trying to run
+    soffice inside the sandbox (fixed by verify_file + the skills), an
+    empty 1,440-token thinking round ending a run (the text-less retry
+    now covers it, proven model-free; the v2c rerun scored 1.00 in 44 s
+    WITHOUT the retry firing — that pass is variance, not the fix). (3)
+    Five check bugs were
+    found by rule 6 — both harnesses failing the same step: the drag
+    parser split a selector on its space, `click .window` hit a hidden
+    or covered window, `expect changed` compared the DOM around itself,
+    the notes check wanted its number in the same cell, a rescore that
+    re-ran whole-workspace checks on artifacts alone. (4) The remaining
+    real gap is wall-clock on the deck (184 s vs 120 s) and the bug
+    (65 s vs 27 s): dsh's native calls carry fewer tokens per round; the
+    cache is not the reason (72–95 % hit on every run). (5) The economy
+    never compacted: peak prompt 35,996 tokens on a 60-call run, under
+    40 % of a 250k context. It is exercised by tests and will matter on
+    MLX and smaller contexts; the cap removal is what mattered here.
+    (6) The judge's calibration drifted on one of three references
+    (deck-bad: hand 3, judged 1; the other two exact) — its absolute
+    numbers are ±2, its orderings held (workbooks < decks ≤ pages).
+    (7) Flaws in the set to fix in v3, not changed mid-run: the xlsx
+    prompt names soffice (Seymour's sandbox cannot run it — fair to
+    neither, and the skill now says verify_file); dsh's tool-event count
+    reads 0 on timeouts (its notification stream, not reality).
