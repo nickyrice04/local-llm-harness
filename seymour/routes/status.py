@@ -30,6 +30,10 @@ async def status():
     stats = await runtime.engine.stats() if runtime.engine else None
     return {
         "capabilities": caps.__dict__ if caps else None,
+        # The model profile (engine/profile.py), with its one-line summary.
+        "profile": ({**runtime.profile.__dict__, "summary": runtime.profile.summary(),
+                     "tool_protocol": runtime.profile.tool_protocol}
+                    if runtime.profile else None),
         "scheduler": snapshot,
         "engine": {
             "slots_total": stats.slots_total if stats else 0,

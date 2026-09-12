@@ -1,0 +1,54 @@
+{
+ "label": "smoke2",
+ "model": "Qwen3.6-35B-A3B-Q8_0.gguf",
+ "records": [
+  {
+   "harness": "seymour",
+   "task": "code-bug-across-files",
+   "category": "code",
+   "status": "done",
+   "seconds": 49.9,
+   "score": 1.0,
+   "tool_calls": 8,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "3 passed in 0.01s"
+    },
+    {
+     "name": "tests/test_inventory.py untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "data/stock.csv untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "the fix is in loader.py (the cause), not report.py (the symptom)",
+     "ok": true,
+     "detail": "loader changed=True, report changed=False"
+    },
+    {
+     "name": "the fix is minimal (\u2264 3 lines of loader.py differ)",
+     "ok": true,
+     "detail": "2 lines differ"
+    }
+   ],
+   "artifacts": [
+    "compare-smoke2/seymour/code-bug-across-files/loader.py"
+   ],
+   "runtime": "",
+   "final": "The bug was in **`inv/loader.py`**, specifically in the `_int` helper function.\n\n**Root cause:** The CSV data has leading spaces in the `qty` column (e.g., `\" 3\"` and `\" 5\"`). The original code used `value.isdigit()`, which returns `False` for strings with whitespace, so `_int` left those values as strings instead of converting them to integers.\n\n**Why the failure showed up where it did:** `test_t",
+   "run_id": "504c3e12-c436-4aa5-81b6-52ac5433ae51",
+   "session_id": "d3ec74fe-7d05-434f-8dc5-5cc7c0e4e7f9",
+   "peak_prompt_tokens": 6129,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  }
+ ]
+}

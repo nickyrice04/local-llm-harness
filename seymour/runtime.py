@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from seymour.agent.manager import AgentManager
     from seymour.engine.adapter import EngineAdapter, EngineCapabilities
+    from seymour.engine.profile import ModelProfile
     from seymour.scheduler.core import Scheduler
 
 # The engine adapter (llama.cpp in production, fake in tests).
@@ -25,5 +26,8 @@ engine: Optional["EngineAdapter"] = None
 caps: Optional["EngineCapabilities"] = None
 # The scheduler every generation goes through.
 scheduler: Optional["Scheduler"] = None
+# The loaded MODEL's measured profile (engine/profile.py): tools in the
+# template, the thinking channel, the system prompt's real token cost.
+profile: Optional["ModelProfile"] = None
 # The primary agent's manager (task lifecycle + the loop runner).
 agent: Optional["AgentManager"] = None

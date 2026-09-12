@@ -209,6 +209,13 @@ async def run_step(task_id: str, tier: Tier = Tier.BACKGROUND_AGENT,
     # empty-reply fallback below (a step whose whole budget went into
     # hidden reasoning gets ONE retry with the hidden channel closed).
     inf = inference.current()
+    # The model profile decides whether thinking is even possible here
+    # (no channel → off) and caps the step floor at a quarter of the
+    # context (a small-context model cannot spend 8k tokens on one step).
+    profile = runtime.profile
+    if profile is not None and not profile.thinking_default_ok:
+        no_think = True
+    step_floor = profile.step_floor(STEP_MIN_TOKENS) if profile is not None else STEP_MIN_TOKENS
     sampling = inf.request_kwargs(thinking_default=not no_think)
     sampling["temperature"] = min(inf.temperature, 0.4)
     if no_think:
@@ -216,7 +223,7 @@ async def run_step(task_id: str, tier: Tier = Tier.BACKGROUND_AGENT,
         sampling.pop("reasoning_budget", None)
     request = GenerationRequest(
         messages=_build_messages(task, tail, force_answer),
-        max_tokens=max(inf.max_tokens, STEP_MIN_TOKENS),
+        max_tokens=max(inf.max_tokens, step_floor),
         **sampling,
         # Thinking stays ON here, and the eval set is why. Turning it off
         # made agent steps FAST and WORSE: multi-step scores fell from

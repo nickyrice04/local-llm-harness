@@ -56,6 +56,21 @@ logger = logging.getLogger("seymour")
 
 
 @asynccontextmanager
+async def _measure_profile(engine, caps):
+    """engine/profile.measure with the chat system prompt as the text to
+    cost; never lets a probe failure block boot."""
+    from seymour.engine import profile
+    from seymour.persona.soul import get_soul
+    from seymour.prompts import load as load_prompt
+    from seymour.run_executor import CHAT_POLICY, render_catalog_for
+    try:
+        system = load_prompt("chat_system", soul=get_soul(), tools=render_catalog_for(CHAT_POLICY))
+        return await profile.measure(engine, caps, system)
+    except Exception:
+        logger.exception("model profile could not be measured — running on the assumed profile")
+        return profile.assumed(caps, "")
+
+
 async def lifespan(app: FastAPI):
     """Startup above the yield, shutdown below — visible symmetry:
     anything started above is stopped below."""
@@ -83,6 +98,10 @@ async def lifespan(app: FastAPI):
         runtime.engine = engine
         runtime.caps = caps
         runtime.scheduler = Scheduler(engine, caps)
+        # The MODEL's profile (tools in template, thinking channel, the
+        # system prompt's real token cost) — measured once per model id,
+        # the assumed fallback when the probes cannot run.
+        runtime.profile = await _measure_profile(engine, caps)
     else:
         # Setup mode: no model yet. The UI's Models tab handles it from here.
         logger.warning("no model at %s — booting in setup mode", model)

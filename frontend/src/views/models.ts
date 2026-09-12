@@ -61,13 +61,15 @@ export function show(container: HTMLElement): ViewHandle {
 
   /** Redraw everything (local list + search area + download state). */
   async function refresh(): Promise<void> {
-    const [local, download, engine] = await Promise.all([
+    const [local, download, engine, status] = await Promise.all([
       get<{ name: string; path: string; size: string; active: boolean; mtp: boolean;
             backend: "gguf" | "mlx"; drafter?: string | null; quant?: string;
             context_max?: number; vision?: boolean; notes?: string[];
             fit: { level: string; required_gb: number; budget_gb: number } }[]>("/api/models"),
       get<{ active: boolean; repo?: string; file?: string }>("/api/models/download/status"),
       get<EngineInfo>("/api/models/engine"),
+      // The loaded model's profile rides on /api/status (null in setup mode).
+      get<{ profile: { summary: string; source: string; tool_protocol: string } | null }>("/api/status").catch(() => ({ profile: null })),
     ]);
 
     /** Run one engine action with busy-state + notice bookkeeping. */
@@ -395,6 +397,12 @@ export function show(container: HTMLElement): ViewHandle {
         + "57–91 tok/s measured) — every tool round and every file write is decode-bound, and a "
         + "dense 27B at 17–32 tok/s makes the same task 3–4× slower. Keep the dense vision "
         + "model for read_image and page screenshots; loading both at once is on the roadmap."),
+      // The loaded model's PROFILE (engine/profile.py): measured facts about
+      // the model itself, or the assumed fallback — said plainly either way.
+      status?.profile ? el("p.muted", { title: status.profile.source === "assumed"
+          ? "nothing could be measured for this model: thinking off, in-band tools, floors from the context"
+          : `measured at load; tool protocol ${status.profile.tool_protocol}` },
+        status.profile.summary + (status.profile.source === "assumed" ? " — running degraded but honest" : "")) : null,
       // The engine status/error line (load progress, refusals, failures).
       notice ? el("p", { className: noticeKind === "error" ? "notice error" : "notice" },
                   notice) : null,

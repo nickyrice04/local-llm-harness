@@ -309,6 +309,13 @@ async def stream_chat_run(
     # trace records the EFFECTIVE values (a comparison needs them).
     inf = inference.current(overrides)
     thinking_on = inf.enable_thinking(policy.enable_thinking)
+    # A model with no hidden channel (the profile measured none) cannot
+    # think; the knob is noise there, and "on" would only add a template
+    # argument the model ignores. Honest: off, and the trace says why.
+    if thinking_on and runtime.profile is not None and not runtime.profile.thinking_default_ok:
+        thinking_on = False
+        overrides = {**(overrides or {}), "thinking": "off"}
+        inf = inference.current(overrides)
     log = RunLog(session_id, policy)
     log.event("run_start", preset=policy.preset,
               tool_scope=policy.tool_scope, thinking=thinking_on,

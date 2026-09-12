@@ -349,6 +349,21 @@ class LlamaCppEngine(EngineAdapter):
     # These two endpoints are llama.cpp-specific — NOT part of the OpenAI-
     # compatible surface — which is exactly why they live behind the adapter.
 
+    async def tokenize(self, text: str) -> int | None:
+        """The REAL token count of `text` under the loaded model's
+        tokenizer (POST /tokenize) — what the profile reports for the
+        system prompt instead of a chars/4 guess. None if the endpoint
+        is missing."""
+        if not self._client:
+            return None
+        try:
+            response = await self._client.post("/tokenize", json={"content": text}, timeout=30.0)
+            response.raise_for_status()
+            tokens = response.json().get("tokens")
+            return len(tokens) if isinstance(tokens, list) else None
+        except (httpx.HTTPError, ValueError):
+            return None
+
     async def props(self) -> dict:
         """GET /props: the server's EFFECTIVE configuration (total_slots,
         default generation settings, chat-template capabilities)."""
@@ -558,6 +573,10 @@ class LlamaCppEngine(EngineAdapter):
                     # can be absent on keep-alive or role-announcement frames —
                     # chained .get() with defaults avoids a KeyError storm.
                     delta = (chunk.get("choices") or [{}])[0].get("delta", {})
+                    # The hidden channel, when the template has one: the
+                    # model profile reads this field name (never assumes it).
+                    if delta.get("reasoning_content"):
+                        req.stats.setdefault("thinking_field", "reasoning_content")
                     if text := delta.get("content"):
                         yield text
         finally:

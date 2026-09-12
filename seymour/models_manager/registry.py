@@ -252,6 +252,10 @@ async def activate_model(path: str) -> dict:
         runtime.engine = engine
         runtime.caps = caps
         runtime.scheduler = Scheduler(engine, caps)
+        # The new model's profile (measured once per model id; the assumed
+        # fallback if the probes cannot run) — app.py does the same at boot.
+        from seymour.app import _measure_profile
+        runtime.profile = await _measure_profile(engine, caps)
         # 5. Persist the choice for next launch — and re-arm autoload
         #    (an explicit Load overrides any earlier Unload).
         set_state("active_model", str(target))
