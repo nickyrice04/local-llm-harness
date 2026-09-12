@@ -1057,7 +1057,14 @@ def _hidden_tests_pass(ws: Path, *names: str) -> tuple[bool, str]:
     target.mkdir(exist_ok=True)
     (target / "__init__.py").write_text("")
     (target / "test_audit.py").write_text(AUDIT_HIDDEN_TESTS)
-    ok, tail = _pytest(ws, *[f"tests_hidden/test_audit.py::{n}" for n in names])
+    try:
+        ok, tail = _pytest(ws, *[f"tests_hidden/test_audit.py::{n}" for n in names])
+    finally:
+        # Never leave the hidden tests behind: in Seymour's REAL workspace
+        # they were collected by the next task's pytest and broke it
+        # (measured 2026-09-12: "tests pass — 1 error").
+        import shutil
+        shutil.rmtree(target, ignore_errors=True)
     return ok, tail
 
 

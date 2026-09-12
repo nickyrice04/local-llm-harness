@@ -31,7 +31,9 @@ def main() -> None:
     args = parser.parse_args()
     only = {t for t in args.only.split(",") if t}
     runner.LABEL = args.label
-    path = next(p for p in sorted(runner.RESULTS.glob(f"compare-{args.label}-*.json")))
+    # The LATEST file for the label: a run that crosses midnight writes a
+    # second, complete file (measured 2026-09-12; the first held 4 of 6).
+    path = sorted(runner.RESULTS.glob(f"compare-{args.label}-*.json"))[-1]
     data = json.loads(path.read_text())
     # Labels from before 2026-09-11 were scored on the first set.
     by_id = {t.id: t for t in (TASKS + TASKS_V1)}

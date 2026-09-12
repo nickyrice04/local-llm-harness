@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>libraOS</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    user-select: none;
+  }
+
+  /* ── Wallpaper ─────────────────────────────────── */
+  #desktop {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    z-index: 0;
+  }
+
+  /* ── Taskbar ───────────────────────────────────── */
+  #taskbar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 48px;
+    background: rgba(20, 20, 35, 0.85);
+    backdrop-filter: blur(16px);
+    display: flex; align-items: center;
+    padding: 0 12px;
+    z-index: 9999;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  #start-button {
+    background: rgba(255,255,255,0.08);
+    border: none; color: #fff;
+    font-size: 15px; font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #start-button:hover { background: rgba(255,255,255,0.16); }
+  #start-button.active { background: rgba(255,255,255,0.22); }
+
+  #taskbar-clock {
+    margin-left: auto;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    padding: 0 8px;
+  }
+
+  /* ── Start Menu ────────────────────────────────── */
+  #start-menu {
+    display: none;
+    position: absolute; bottom: 56px; left: 8px;
+    width: 220px;
+    background: rgba(30, 30, 50, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 8px 0;
+    z-index: 10000;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  }
+  #start-menu.open { display: block; }
+
+  .start-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px;
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .start-item:hover { background: rgba(255,255,255,0.1); }
+  .start-item .icon { font-size: 18px; width: 24px; text-align: center; }
+
+  /* ── Windows ───────────────────────────────────── */
+  .window {
+    position: absolute;
+    min-width: 280px; min-height: 180px;
+    background: rgba(35, 35, 55, 0.96);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.4);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transition: opacity 0.15s;
+  }
+  .window.minimized {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.92);
+  }
+
+  .titlebar {
+    display: flex; align-items: center;
+    height: 36px;
+    padding: 0 10px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    cursor: grab;
+    flex-shrink: 0;
+  }
+  .titlebar:active { cursor: grabbing; }
+  .titlebar .title {
+    flex: 1;
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .titlebar button {
+    width: 28px; height: 28px;
+    border: none; background: transparent;
+    color: rgba(255,255,255,0.6);
+    font-size: 16px; cursor: pointer;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s;
+  }
+  .titlebar button:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .titlebar .btn-close:hover { background: rgba(220,60,60,0.7); }
+
+  .window-body {
+    flex: 1; padding: 12px;
+    overflow: auto;
+    color: rgba(255,255,255,0.88);
+    font-size: 14px;
+  }
+
+  /* ── Notepad ───────────────────────────────────── */
+  #notepad-text {
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.9);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    padding: 10px;
+    resize: none;
+    outline: none;
+    line-height: 1.55;
+  }
+  #notepad-text:focus { border-color: rgba(100,140,255,0.4); }
+
+  /* ── Calculator ────────────────────────────────── */
+  #calc-display {
+    width: 100%;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 300;
+    text-align: right;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 54px;
+    overflow: hidden;
+  }
+  #calc-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  #calc-buttons button {
+    height: 44px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, transform 0.08s;
+  }
+  #calc-buttons button:active { transform: scale(0.95); }
+  #calc-buttons .num {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+  #calc-buttons .num:hover { background: rgba(255,255,255,0.14); }
+  #calc-buttons .op {
+    background: rgba(80,120,255,0.25);
+    color: #a0c0ff;
+  }
+  #calc-buttons .op:hover { background: rgba(80,120,255,0.38); }
+  #calc-buttons .eq {
+    background: rgba(80,160,255,0.45);
+    color: #fff;
+  }
+  #calc-buttons .eq:hover { background: rgba(80,160,255,0.6); }
+  #calc-buttons .clear {
+    background: rgba(220,60,60,0.25);
+    color: #ff9090;
+  }
+  #calc-buttons .clear:hover { background: rgba(220,60,60,0.4); }
+
+  /* ── About ─────────────────────────────────────── */
+  .about-content {
+    text-align: center;
+    padding: 20px 10px;
+  }
+  .about-content h2 {
+    font-size: 22px; font-weight: 600;
+    margin-bottom: 6px;
+    color: #fff;
+  }
+  .about-content p {
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div id="desktop"></div>
+
+<!-- Start Menu -->
+<div id="start-menu">
+  <div class="start-item" data-app="notepad">
+    <span class="icon">📝</span> Notepad
+  </div>
+  <div class="start-item" data-app="calculator">
+    <span class="icon">🔢</span> Calculator
+  </div>
+  <div class="start-item" data-app="about">
+    <span class="icon">ℹ️</span> About
+  </div>
+</div>
+
+<!-- Taskbar -->
+<div id="taskbar">
+  <button id="start-button">☰ Start</button>
+  <div id="taskbar-clock"></div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  /* ── Clock ─────────────────────────────────────── */
+  const clockEl = document.getElementById("taskbar-clock");
+  function updateClock() {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ── Start Menu Toggle ─────────────────────────── */
+  const startBtn  = document.getElementById("start-button");
+  const startMenu = document.getElementById("start-menu");
+
+  startBtn.addEventListener("click", function(e) {
+    e.stopPropagation();
+    const isOpen = startMenu.classList.toggle("open");
+    startBtn.classList.toggle("active", isOpen);
+  });
+
+  function closeStartMenu() {
+    startMenu.classList.remove("open");
+    startBtn.classList.remove("active");
+  }
+
+  document.addEventListener("click", function(e) {
+    if (!startMenu.contains(e.target) && e.target !== startBtn) closeStartMenu();
+  });
+
+  /* ── App Launchers ─────────────────────────────── */
+  document.querySelectorAll(".start-item").forEach(function(item) {
+    item.addEventListener("click", function() {
+      var app = this.getAttribute("data-app");
+      openApp(app);
+      closeStartMenu();
+    });
+  });
+
+  /* ── Window Manager ────────────────────────────── */
+  let highestZ = 100;
+  const windows = [];
+
+  function openApp(appName) {
+    // Reuse existing minimized window or create new
+    const existing = windows.find(function(w) { return w.app === appName; });
+    if (existing) {
+      existing.el.classList.remove("minimized");
+      bringToFront(existing);
+      return;
+    }
+
+    var win = createWindow(appName);
+    windows.push(win);
+  }
+
+  function createWindow(appName) {
+    var id = appName + "-win";
+    var win = document.createElement("div");
+    win.className = "window";
+    win.id = id;
+    win.setAttribute("data-app", appName);
+
+    var titles = { notepad: "Notepad", calculator: "Calculator", about: "About libraOS" };
+    var w = 420, h = 380;
+    var x = 60 + windows.length * 30;
+    var y = 40 + windows.length * 30;
+    win.style.left = x + "px";
+    win.style.top  = y + "px";
+    win.style.width  = w + "px";
+    win.style.height = h + "px";
+
+    // Title bar
+    var tb = document.createElement("div");
+    tb.className = "titlebar";
+
+    var title = document.createElement("span");
+    title.className = "title";
+    title.textContent = titles[appName] || appName;
+    tb.appendChild(title);
+
+    var btnMin = document.createElement("button");
+    btnMin.textContent = "─";
+    btnMin.title = "Minimize";
+    btnMin.addEventListener("click", function(e) {
+      e.stopPropagation();
+      win.classList.toggle("minimized");
+    });
+    tb.appendChild(btnMin);
+
+    var btnClose = document.createElement("button");
+    btnClose.className = "btn-close";
+    btnClose.textContent = "✕";
+    btnClose.title = "Close";
+    btnClose.addEventListener("click", function(e) {
+      e.stopPropagation();
+      win.remove();
+      var idx = windows.findIndex(function(w) { return w.el === win; });
+      if (idx !== -1) windows.splice(idx, 1);
+    });
+    tb.appendChild(btnClose);
+
+    win.appendChild(tb);
+
+    // Body
+    var body = document.createElement("div");
+    body.className = "window-body";
+
+    if (appName === "notepad") {
+      var ta = document.createElement("textarea");
+      ta.id = "notepad-text";
+      ta.placeholder = "Start typing...";
+      body.appendChild(ta);
+    } else if (appName === "calculator") {
+      buildCalculator(body);
+    } else if (appName === "about") {
+      body.innerHTML = '<div class="about-content">' +
+        '<h2>libraOS</h2>' +
+        '<p>A small desktop simulation built with vanilla HTML, CSS &amp; JS.</p>' +
+        '<p>No external resources — everything runs locally.</p>' +
+        '</div>';
+    }
+
+    win.appendChild(body);
+    document.body.appendChild(win);
+
+    bringToFront({ el: win });
+
+    // Drag
+    makeDraggable(tb, win);
+
+    // Focus on click
+    win.addEventListener("mousedown", function() {
+      bringToFront({ el: win });
+    });
+
+    return { el: win, app: appName };
+  }
+
+  function bringToFront(winObj) {
+    highestZ++;
+    winObj.el.style.zIndex = highestZ;
+  }
+
+  /* ── Draggable ─────────────────────────────────── */
+  function makeDraggable(handle, win) {
+    var startX, startY, origX, origY, dragging = false;
+
+    handle.addEventListener("mousedown", function(e) {
+      if (e.target.tagName === "BUTTON") return;
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      origX  = win.offsetLeft;
+      origY  = win.offsetTop;
+      e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", function(e) {
+      if (!dragging) return;
+      win.style.left = (origX + e.clientX - startX) + "px";
+      win.style.top  = (origY + e.clientY - startY) + "px";
+    });
+
+    document.addEventListener("mouseup", function() {
+      dragging = false;
+    });
+  }
+
+  /* ── Calculator ────────────────────────────────── */
+  function buildCalculator(container) {
+    var display = document.createElement("div");
+    display.id = "calc-display";
+    display.textContent = "0";
+    container.appendChild(display);
+
+    var btnGrid = document.createElement("div");
+    btnGrid.id = "calc-buttons";
+
+    var keys = [
+      ["C","⌫","%","/"],
+      ["7","8","9","*"],
+      ["4","5","6","-"],
+      ["1","2","3","+"],
+      ["0",".","=","="]
+    ];
+
+    keys.forEach(function(row) {
+      row.forEach(function(key) {
+        var btn = document.createElement("button");
+        btn.setAttribute("data-key", key);
+        btn.textContent = key;
+        btn.className = "num";
+
+        if (["/","*","-","+","%"].indexOf(key) !== -1) {
+          btn.className = "op";
+        } else if (key === "=") {
+          btn.className = "eq";
+        } else if (key === "C") {
+          btn.className = "clear";
+        }
+
+        btn.addEventListener("click", function() {
+          handleCalc(key, display);
+        });
+
+        btnGrid.appendChild(btn);
+      });
+    });
+
+    container.appendChild(btnGrid);
+  }
+
+  function handleCalc(key, display) {
+    var cur = display.textContent;
+
+    if (key === "C") {
+      display.textContent = "0";
+      return;
+    }
+
+    if (key === "⌫") {
+      display.textContent = cur.length > 1 ? cur.slice(0, -1) : "0";
+      return;
+    }
+
+    if (key === "=") {
+      try {
+        var expr = cur.replace(/[^0-9+\-*/.()%]/g, "");
+        if (!expr) return;
+        var result = Function("return (" + expr + ")")();
+        if (!isFinite(result)) {
+          display.textContent = "Error";
+          return;
+        }
+        display.textContent = parseFloat(result.toFixed(10)).toString();
+      } catch(e) {
+        display.textContent = "Error";
+      }
+      return;
+    }
+
+    if (key === "%") {
+      display.textContent = cur + "%";
+      return;
+    }
+
+    // Digits, operators, dot
+    if (cur === "0" && key !== "." && !"+-*/%".includes(key)) {
+      display.textContent = key;
+    } else {
+      display.textContent = cur + key;
+    }
+  }
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "artifacts": {
+    "A": {
+      "criteria": [
+        {"name": "The summary sheet reads clearly (headers, formats, alignment, widths)", "score": 5, "evidence": "A/03.png: the Summary is a compact, correctly structured grid (Region rows East/North/South/West, columns 2026-01..2026-03, a Total column and a Total row) and every label fits its column, but the header row is unstyled plain text with no bold, fill or borders, so headers, body and totals all look alike."},
+        {"name": "Numbers are formatted (currency, thousands, dates) and totals are visible", "score": 4, "evidence": "A/01.png: amounts in the Data sheet carry thousands separators and two decimals ('1,040.00', '2,850.00'), but every date cell shows '###' because the column is too narrow; A/03.png: the Summary values are raw unformatted numbers ('10047.5', '16832.5', '41040') with no currency or thousands separator, though all totals (per region, per month, grand total 41040) are visible and add up."},
+        {"name": "The chart (if any) is labelled and matches the data", "score": 6, "evidence": "A/03.png-A/04.png: the bar chart has a title 'Total Amount by Region', axis titles 'Amount' and 'Region', region labels, and bar heights that match the table (East ~8050, North ~12170, South ~12050, West ~8770); but the chart is positioned across a page break so the rendered title is cut to 'Total Amount by Regio' on A/03.png and the West bar and 'Total' legend land alone on A/04.png."},
+        {"name": "Nothing is cut off, #ERROR-ed or empty where data is expected", "score": 4, "evidence": "No formula errors anywhere (A/03.png computes every cell), but A/01.png and A/02.png show '###' in all 48 date cells, and the chart is sliced in two between A/03.png and A/04.png."},
+        {"name": "Would a person send this to a colleague?", "score": 5, "evidence": "The content is right: the Summary (A/03.png) computes, the chart matches, and the Notes sheet (A/05.png) itemises seven cleaning steps with row counts ('Total rows removed: 5', 'Clean rows in Data sheet: 48', 'Original rows: 54'); but a colleague would immediately see the '###' date column (A/01.png) and the unformatted summary numbers, so it needs a tidy-up first."}
+      ],
+      "overall": 5,
+      "highest_leverage_fix": "Widen the date column on the Data sheet so dates render instead of '###' (A/01.png), apply a currency/thousands number format and a bold header row to the Summary table (A/03.png), and anchor the chart so it sits on one page."
+    }
+  },
+  "winner": null,
+  "confidence": "high"
+}

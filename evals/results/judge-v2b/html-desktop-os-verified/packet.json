@@ -1,0 +1,35 @@
+{
+ "prompt": "Create os.html in the workspace: a single self-contained HTML file (vanilla HTML/CSS/JS, no external resources) that simulates a small desktop operating system: a wallpaper, a taskbar with a live clock and a start button (id=\"start-button\") that toggles a start menu (id=\"start-menu\") listing apps as elements with data-app=\"notepad\", data-app=\"calculator\" and data-app=\"about\"; clicking an app opens it in a draggable window (class=\"window\", dragged by its child with class=\"titlebar\") that can be closed and minimised; clicking a window brings it to the front. The notepad has a textarea id=\"notepad-text\". The calculator has a display id=\"calc-display\" and buttons with data-key for the digits, operators (+ - * /), \".\", \"=\" and \"C\", and must compute correctly (8 / 2 = 4). Make it look clean and modern. Write the file, then verify it actually works (check_page with interaction steps, or a headless browser) before you finish.",
+ "kind": "page",
+ "rubric": [
+  "Layout and visual polish at desktop width (spacing, alignment, colour)",
+  "Holds up on the laptop and phone viewports (no overflow, no unreadable text)",
+  "The interactions asked for visibly work (compare the after-interaction images)",
+  "No console errors; nothing visibly broken",
+  "Would a person use this?"
+ ],
+ "artifacts": {
+  "A": {
+   "images": [
+    "A/01.png",
+    "A/02.png",
+    "A/03.png",
+    "A/04.png",
+    "A/05.png",
+    "A/06.png",
+    "A/07.png",
+    "A/08.png",
+    "A/09.png",
+    "A/10.png",
+    "A/11.png",
+    "A/12.png",
+    "A/13.png",
+    "A/14.png",
+    "A/15.png",
+    "A/16.png"
+   ],
+   "console": "",
+   "interaction": "\u2714 expect #start-button visible\n\u2714 click #start-button \u00b7 DOM changed\n\u2714 shot after-02\n\u2714 expect #start-menu visible\n\u2714 click [data-app=notepad] \u00b7 DOM changed\n\u2714 shot after-04\n\u2714 expect #notepad-text visible\n\u2714 type #notepad-text hello from the eval \u00b7 DOM changed\n\u2714 shot after-06\n\u2714 expect #notepad-text visible\n\u2714 click #start-button \u00b7 DOM changed\n\u2714 shot after-08\n\u2714 click [data-app=calculator] \u00b7 DOM changed\n\u2714 shot after-09\n\u2714 expect #calc-display visible\n\u2714 click [data-key='8'] \u00b7 DOM changed\n\u2714 shot after-11\n\u2714 click [data-key='/'] \u00b7 DOM changed\n\u2714 shot after-12\n\u2714 click [data-key='2'] \u00b7 DOM changed\n\u2714 shot after-13\n\u2714 click [data-key='='] \u00b7 DOM changed\n\u2714 shot after-14\n\u2714 expect #calc-display text 4\n\u2714 drag .window .titlebar 120 60 \u00b7 DOM changed\n\u2714 shot after-16\n\u2718 expect changed \u2014 nothing in the DOM changed\n\u2714 click #start-button \u00b7 DOM changed\n\u2714 shot after-18\n\u2714 click [data-app=about] \u00b7 DOM changed\n\u2714 shot after-19\n\u2718 click .window \u00b7 DOM unchanged \u2014 TimeoutError: Locator.click: Timeout 4000ms exceeded.\n\u2714 shot after-20\n\u2718 expect changed \u2014 nothing in the DOM changed"
+  }
+ }
+}

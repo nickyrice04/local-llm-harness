@@ -67,3 +67,41 @@ def test_a_fence_only_reply_is_the_content_of_a_pending_write_and_failed_writes_
     assert pages == {}                                                                                 # nothing was written
     _track_page(pages, "write_file", {"path": "clean.py"}, Log(), ok=True)
     assert "clean.py" in pages
+
+
+async def test_an_empty_round_under_the_cap_is_retried_with_thinking_off(monkeypatch):
+    """1,440 hidden tokens and no text (measured 2026-09-12): the run must
+    not end 'out of room' — it retries once with thinking off."""
+    import uuid
+    from seymour import run_executor, runtime
+    from seymour.db import ChatSession, SessionLocal, init_db
+    from seymour.engine.adapter import GenerationRequest
+    from seymour.engine.fake import FakeEngine
+    from seymour.scheduler.core import Scheduler
+    init_db()
+
+    class Scripted(FakeEngine):
+        def __init__(self):
+            super().__init__(delay=0.0, tokens=1)
+            self.replies = ["", "The answer is 4."]
+
+        async def _generate(self, req: GenerationRequest):
+            self.served.append(req)
+            reply = self.replies.pop(0) if self.replies else "done"
+            if reply:
+                yield reply
+            req.stats.update({"prompt_tokens": 1, "generated_tokens": 1440 if not reply else 6, "decode_tps": 1.0, "tps_source": "engine"})
+    engine = Scripted()
+    caps = await engine.capabilities()
+    monkeypatch.setattr(runtime, "scheduler", Scheduler(engine, caps))
+    monkeypatch.setattr(runtime, "caps", caps)
+    monkeypatch.setattr(runtime, "profile", None)
+    sid = str(uuid.uuid4())
+    with SessionLocal() as db:
+        db.add(ChatSession(id=sid, title="t")); db.commit()
+    base = [{"role": "system", "content": "sys"}, {"role": "user", "content": "2+2?"}]
+    frames = [f async for f in run_executor.stream_chat_run(sid, base, "2+2?", False, base[1:], overrides={"thinking": "on"})]
+    text = "".join(f.get("delta", "") for f in frames)
+    assert "The answer is 4." in text and "ran out of room" not in text
+    assert any(f.get("economy", {}).get("what") == "thinking_off" for f in frames)
+    assert engine.served[1].template_kwargs == {"enable_thinking": False}     # the retry closed the channel

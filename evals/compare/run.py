@@ -172,9 +172,34 @@ def clean_task_files(task: Task, workspace: Path) -> None:
 
 
 # ------------------------------------------------------------- Seymour
+def _workspace_files(workspace: Path) -> set[Path]:
+    return {p for p in workspace.rglob("*") if p.is_file() and ".seymour" not in p.parts}
+
+
+def remove_new_files(workspace: Path, before: set[Path]) -> int:
+    """Remove what a task LEFT behind beyond its setup and artifacts — the
+    model's own scripts, renders, hidden tests — so the next task starts
+    clean (measured 2026-09-12: list_files showed twelve leftover files
+    and a stale tests_hidden/ broke the next task's pytest). Only files
+    that did not exist before the task are touched: the workspace is a
+    person's folder."""
+    removed = 0
+    for path in _workspace_files(workspace) - before:
+        try:
+            path.unlink()
+            removed += 1
+        except OSError:
+            pass
+    for folder in sorted((p for p in workspace.rglob("*") if p.is_dir() and ".seymour" not in p.parts), reverse=True):
+        if not any(folder.iterdir()):
+            folder.rmdir()
+    return removed
+
+
 async def run_seymour(task: Task, model_id: str) -> dict:
     """One CHAT run through the live app (the executor a person uses)."""
     clean_task_files(task, WORKSPACE)
+    pristine = _workspace_files(WORKSPACE)
     place_setup(task, WORKSPACE)
     started = time.monotonic()
     status, final, run_id, session_id = "timeout", "", "", ""
@@ -229,6 +254,7 @@ async def run_seymour(task: Task, model_id: str) -> dict:
     kept = keep_artifacts(task, WORKSPACE, dest)
     rendered = await asyncio.to_thread(render_for_judge, task, WORKSPACE, dest)
     clean_task_files(task, WORKSPACE)
+    remove_new_files(WORKSPACE, pristine)
     return {"harness": "seymour", "task": task.id, "category": task.category,
             "status": status, "seconds": seconds, "score": round(value, 3),
             "tool_calls": tool_calls, "checks": rows, "artifacts": kept, "runtime": runtime,

@@ -1,0 +1,34 @@
+✔ expect #start-button visible
+✔ click #start-button · DOM changed
+✔ shot after-02
+✔ expect #start-menu visible
+✔ click [data-app=notepad] · DOM changed
+✔ shot after-04
+✔ expect #notepad-text visible
+✔ type #notepad-text hello from the eval · DOM changed
+✔ shot after-06
+✔ expect #notepad-text visible
+✔ click #start-button · DOM changed
+✔ shot after-08
+✔ click [data-app=calculator] · DOM changed
+✔ shot after-09
+✔ expect #calc-display visible
+✔ click [data-key='8'] · DOM changed
+✔ shot after-11
+✔ click [data-key='/'] · DOM changed
+✔ shot after-12
+✔ click [data-key='2'] · DOM changed
+✔ shot after-13
+✔ click [data-key='='] · DOM changed
+✔ shot after-14
+✔ expect #calc-display text 4
+✔ drag .window .titlebar 120 60 · DOM changed
+✔ shot after-16
+✘ expect changed — nothing in the DOM changed
+✔ click #start-button · DOM changed
+✔ shot after-18
+✔ click [data-app=about] · DOM changed
+✔ shot after-19
+✘ click .window · DOM unchanged — TimeoutError: Locator.click: Timeout 4000ms exceeded.
+✔ shot after-20
+✘ expect changed — nothing in the DOM changed

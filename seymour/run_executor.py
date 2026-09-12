@@ -512,8 +512,13 @@ async def stream_chat_run(
             # retry once with the hidden channel closed, and keep it closed
             # for the rest of this run.
             generated = int((request.stats or {}).get("generated_tokens") or 0)
+            # …and the softer case (measured 2026-09-12): 1,440 tokens of
+            # hidden reasoning, then the model stopped without writing a
+            # word — under the cap, so the old rule let the run end "out of
+            # room". A round with NO text at all while thinking is on gets
+            # the same retry: the tokens were spent where nobody reads.
             if (not buffer.strip() and not visible[round_start:].strip() and thinking_on
-                    and generated >= int(inf.max_tokens * 0.9) and not think_retried):
+                    and generated > 0 and not think_retried):
                 think_retried = True
                 thinking_on = False
                 inf = inference.current({**(overrides or {}), "thinking": "off"})

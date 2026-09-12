@@ -183,6 +183,186 @@
    "spills": 0,
    "prunes": 0,
    "render": {}
+  },
+  {
+   "harness": "seymour",
+   "task": "code-make-it-fast",
+   "category": "code",
+   "status": "done",
+   "seconds": 39.2,
+   "score": 0.25,
+   "tool_calls": 4,
+   "checks": [
+    {
+     "name": "bench.py untouched",
+     "ok": true,
+     "detail": "sha256 compared"
+    },
+    {
+     "name": "results identical (checksum unchanged)",
+     "ok": false,
+     "detail": "textstats.py was not changed"
+    },
+    {
+     "name": "at least 5\u00d7 faster than the original",
+     "ok": false,
+     "detail": "2171 ms \u2192 2196 ms (1.0\u00d7)"
+    },
+    {
+     "name": "at least 20\u00d7 faster than the original",
+     "ok": false,
+     "detail": "2171 ms \u2192 2156 ms (1.0\u00d7)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2b/seymour/code-make-it-fast/textstats.py"
+   ],
+   "runtime": "",
+   "final": "I ran out of room before writing an answer \u2014 ask again and I'll get straight to it.",
+   "run_id": "434f7131-4aa0-4a2c-88ba-e4b442967c16",
+   "session_id": "67d86d37-3da6-4991-909c-fa169857cd09",
+   "peak_prompt_tokens": 5522,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  },
+  {
+   "harness": "seymour",
+   "task": "html-desktop-os-verified",
+   "category": "web",
+   "status": "done",
+   "seconds": 313.8,
+   "score": 1.0,
+   "tool_calls": 7,
+   "checks": [
+    {
+     "name": "os.html exists",
+     "ok": true,
+     "detail": "os.html"
+    },
+    {
+     "name": "os.html is a complete HTML document with script",
+     "ok": true,
+     "detail": "19 tags; script=True"
+    },
+    {
+     "name": "os.html is self-contained",
+     "ok": true,
+     "detail": "0 external references"
+    },
+    {
+     "name": "has the start button id",
+     "ok": true,
+     "detail": "id\\s*=\\s*[\"\\']start-button[\"\\']"
+    },
+    {
+     "name": "window stacking",
+     "ok": true,
+     "detail": "z-?index"
+    },
+    {
+     "name": "os.html: no console errors at load",
+     "ok": true,
+     "detail": "0 console errors"
+    },
+    {
+     "name": "os.html: \u226550% of interaction steps pass",
+     "ok": true,
+     "detail": "21/21 steps passed"
+    },
+    {
+     "name": "os.html: \u226590% of interaction steps pass",
+     "ok": true,
+     "detail": "21/21 steps passed"
+    },
+    {
+     "name": "os.html: \u2265100% of interaction steps pass",
+     "ok": true,
+     "detail": "21/21 steps passed"
+    }
+   ],
+   "artifacts": [
+    "compare-v2b/seymour/html-desktop-os-verified/os.html"
+   ],
+   "runtime": "os.html: 0 errors",
+   "final": "Done. `os.html` is in your workspace and passed verification with zero console errors.\n\nIt includes:\n- **Desktop & Taskbar**: A gradient wallpaper, a glassmorphic taskbar, and a live clock.\n- **Start Menu**: `id=\"start-menu\"` toggles via `id=\"start-button\"`, listing Notepad, Calculator, and About with `data-app` attributes.\n- **Window Manager**: Draggable windows (`class=\"window\"`, grabbed via `cl",
+   "run_id": "16a71d27-0c67-4fac-a8d0-aaa0f892a33a",
+   "session_id": "bb11ec8a-6219-4722-8a1d-6d91d09ea160",
+   "peak_prompt_tokens": 17432,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {
+    "images": 16,
+    "notes": [],
+    "interaction_ok": false
+   }
+  },
+  {
+   "harness": "seymour",
+   "task": "audit-long-horizon",
+   "category": "code",
+   "status": "done",
+   "seconds": 214.1,
+   "score": 1.0,
+   "tool_calls": 14,
+   "checks": [
+    {
+     "name": "AUDIT.md exists",
+     "ok": true,
+     "detail": "AUDIT.md"
+    },
+    {
+     "name": "bug 1 fixed: search is case/accent-insensitive",
+     "ok": true,
+     "detail": "1 passed in 0.01s"
+    },
+    {
+     "name": "bug 2 fixed: days_between sign, fees positive",
+     "ok": true,
+     "detail": "1 passed in 0.01s"
+    },
+    {
+     "name": "bug 3 fixed: add_days is off by one (due dates)",
+     "ok": true,
+     "detail": "1 passed in 0.01s"
+    },
+    {
+     "name": "loan limits and copies still hold (nothing broken)",
+     "ok": true,
+     "detail": "1 passed in 0.01s"
+    },
+    {
+     "name": "AUDIT.md names the two files and the two mechanisms",
+     "ok": true,
+     "detail": "found ['repo.py', 'dates.py']"
+    },
+    {
+     "name": "AUDIT.md also names the add_days off-by-one",
+     "ok": true,
+     "detail": "looked for add_days"
+    },
+    {
+     "name": "frozen files untouched",
+     "ok": true,
+     "detail": "data, README, legacy, models, config compared"
+    }
+   ],
+   "artifacts": [
+    "compare-v2b/seymour/audit-long-horizon/AUDIT.md",
+    "compare-v2b/seymour/audit-long-horizon/repo.py",
+    "compare-v2b/seymour/audit-long-horizon/dates.py"
+   ],
+   "runtime": "",
+   "final": "I've found and fixed the three bugs. Here's the summary:\n\n1.  **Search finds nothing:** `lib/storage/repo.py` line 22 compared the normalised query against the raw `b.title` instead of `normalise(b.title)`. Fixed.\n2.  **Late fees are zero/negative:** `lib/utils/dates.py` line 23 had the arguments to `days_between` swapped (`parse(earlier) - parse(later)`), always returning negative days. Fixed to ",
+   "run_id": "2ecc5bc2-3406-4579-bd8b-e48a53874407",
+   "session_id": "f25394d4-813b-4bbb-86ed-cc5c968cc550",
+   "peak_prompt_tokens": 9821,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
   }
  ]
 }
