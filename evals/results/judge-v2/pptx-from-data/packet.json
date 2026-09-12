@@ -1,0 +1,39 @@
+{
+ "prompt": "quarterly.csv in the workspace has monthly revenue and customer counts by region for Q1 2026. Brief: the leadership team wants a short, presentable Q1 review deck. Create q1_review.pptx with python (python-pptx, pandas installed): exactly 6 slides \u2014 a title slide; one slide with a CHART built from the actual revenue numbers (revenue by region, or by month per region) and a one-line takeaway; one slide of key numbers (total revenue, best region, growth from January to March, computed from the data); one slide of risks or observations; one slide of next steps; a closing slide. Use one consistent visual style on every slide (one palette, same fonts and sizes, nothing from the default template showing), keep text short so nothing overflows its box, and add speaker notes to every slide. Render the deck to PDF with /opt/homebrew/bin/soffice --headless --convert-to pdf and check the page count before you finish.",
+ "kind": "deck",
+ "rubric": [
+  "Visual consistency across slides (one palette, one type scale, aligned grid)",
+  "No overflow, no empty placeholders, nothing cut off",
+  "One idea per slide; titles state the point; text is readable at a glance",
+  "The chart (if any) is built from the data, labelled, and readable",
+  "Would a person present this?"
+ ],
+ "artifacts": {
+  "A": {
+   "images": [
+    "A/01.png",
+    "A/02.png",
+    "A/03.png",
+    "A/04.png",
+    "A/05.png",
+    "A/06.png",
+    "A/07.png"
+   ],
+   "console": "",
+   "interaction": ""
+  },
+  "B": {
+   "images": [
+    "B/01.png",
+    "B/02.png",
+    "B/03.png",
+    "B/04.png",
+    "B/05.png",
+    "B/06.png",
+    "B/07.png"
+   ],
+   "console": "",
+   "interaction": ""
+  }
+ }
+}

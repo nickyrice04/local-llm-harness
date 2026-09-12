@@ -1,0 +1,28 @@
+{
+ "prompt": "orders.csv in the workspace is an export with problems: dates in three formats, amounts with currency symbols and thousands separators, region names with inconsistent case/spaces, a few duplicate orders (same order_id, one field differs), rows with blank amounts, and a junk TOTAL row at the end. Produce orders_clean.xlsx with python (pandas and openpyxl are installed): (1) a 'Data' sheet with the cleaned rows \u2014 real dates, numeric amounts, normalised regions, duplicates removed (keep one), rows without an amount dropped, no junk row; (2) a 'Summary' sheet with LIVE Excel formulas (SUMIFS over the Data sheet) giving total amount by region (rows) and month (columns, 2026-01..2026-03), with a total per region, per month, and a grand total \u2014 formulas, not pasted numbers; (3) a bar chart of total amount by region on the Summary sheet; (4) a 'Notes' sheet stating exactly what was cleaned and how many rows were removed. Verify the workbook by recalculating it with LibreOffice (/opt/homebrew/bin/soffice --headless --convert-to xlsx) and reading the values back with openpyxl data_only=True before you finish; compare two totals against pandas.",
+ "kind": "workbook",
+ "rubric": [
+  "The summary sheet reads clearly (headers, formats, alignment, widths)",
+  "Numbers are formatted (currency, thousands, dates) and totals are visible",
+  "The chart (if any) is labelled and matches the data",
+  "Nothing is cut off, #ERROR-ed or empty where data is expected",
+  "Would a person send this to a colleague?"
+ ],
+ "artifacts": {
+  "A": {
+   "images": [],
+   "console": "",
+   "interaction": ""
+  },
+  "B": {
+   "images": [
+    "B/01.png",
+    "B/02.png",
+    "B/03.png",
+    "B/04.png"
+   ],
+   "console": "",
+   "interaction": ""
+  }
+ }
+}

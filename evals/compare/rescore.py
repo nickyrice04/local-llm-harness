@@ -39,6 +39,11 @@ def main() -> None:
         task = by_id.get(record["task"])
         if task is None or not record["artifacts"] or (only and task.id not in only):
             continue
+        if task.category == "code":
+            # Code checks need the WHOLE workspace (pytest, benchmarks, hidden
+            # tests); an artifact-only folder fails them all. Their recorded
+            # results stand (measured 2026-09-11: a rescore zeroed three tasks).
+            continue
         # Rebuild a workspace holding just the artifacts, at their paths.
         with tempfile.TemporaryDirectory() as tmp:
             ws = Path(tmp)

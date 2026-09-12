@@ -68,6 +68,627 @@
     ],
     "interaction_ok": null
    }
+  },
+  {
+   "harness": "dsh",
+   "task": "xlsx-messy-cleanup",
+   "category": "office",
+   "status": "timeout",
+   "seconds": 960.0,
+   "score": 0.75,
+   "tool_calls": 0,
+   "checks": [
+    {
+     "name": "orders_clean.xlsx exists",
+     "ok": true,
+     "detail": "orders_clean.xlsx"
+    },
+    {
+     "name": "orders_clean.xlsx: three sheets incl. Data, Summary, Notes",
+     "ok": true,
+     "detail": "['Data', 'Summary', 'Notes']"
+    },
+    {
+     "name": "orders_clean.xlsx: Data has exactly 48 cleaned rows",
+     "ok": true,
+     "detail": "48 rows (truth 48)"
+    },
+    {
+     "name": "orders_clean.xlsx: Summary uses \u2265 12 live formulas",
+     "ok": true,
+     "detail": "20 formulas"
+    },
+    {
+     "name": "orders_clean.xlsx: \u226550% of region\u00d7month/region/grand aggregates match pandas truth after recalc",
+     "ok": false,
+     "detail": "2/17 aggregates present after recalc (grand total 41040.0)"
+    },
+    {
+     "name": "orders_clean.xlsx: \u2265100% of region\u00d7month/region/grand aggregates match pandas truth after recalc",
+     "ok": false,
+     "detail": "2/17 aggregates present after recalc (grand total 41040.0)"
+    },
+    {
+     "name": "orders_clean.xlsx: has a chart",
+     "ok": true,
+     "detail": "chart objects found"
+    },
+    {
+     "name": "orders_clean.xlsx: Notes mentions duplicates and a removed count",
+     "ok": true,
+     "detail": "looked for 'duplic' and a number anywhere on Notes"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/dsh/xlsx-messy-cleanup/orders_clean.xlsx"
+   ],
+   "runtime": "",
+   "final": "(timed out)",
+   "render": {
+    "images": 4,
+    "notes": [],
+    "interaction_ok": null
+   }
+  },
+  {
+   "harness": "seymour",
+   "task": "pptx-from-data",
+   "category": "office",
+   "status": "done",
+   "seconds": 511.2,
+   "score": 0.75,
+   "tool_calls": 36,
+   "checks": [
+    {
+     "name": "q1_review.pptx exists",
+     "ok": true,
+     "detail": "q1_review.pptx"
+    },
+    {
+     "name": "q1_review.pptx: exactly 6 slides",
+     "ok": true,
+     "detail": "6 slides"
+    },
+    {
+     "name": "q1_review.pptx: a native chart on some slide",
+     "ok": true,
+     "detail": "chart shape found"
+    },
+    {
+     "name": "q1_review.pptx: the chart carries the real numbers",
+     "ok": true,
+     "detail": "looked for 128000/149000/412500 in chart series"
+    },
+    {
+     "name": "q1_review.pptx: speaker notes on every slide",
+     "ok": true,
+     "detail": "notes checked"
+    },
+    {
+     "name": "q1_review.pptx: the key numbers are computed (total 1,007,200; north best; +16% growth)",
+     "ok": false,
+     "detail": "looked for the total and 'North'"
+    },
+    {
+     "name": "q1_review.pptx: one type scale (\u2264 4 distinct font sizes)",
+     "ok": false,
+     "detail": "sizes []"
+    },
+    {
+     "name": "q1_review.pptx: no overflow, no empty placeholders",
+     "ok": true,
+     "detail": "[auto-check /var/folders/jh/nmtdv8ld6yv5pvfrgplgf65h0000gn/T/tmp7bst84za/q1_review.pptx] verdict: PASS \u2014 6 slide(s); notes on 6"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/seymour/pptx-from-data/q1_review.pptx"
+   ],
+   "runtime": "",
+   "final": "The PDFs are being created inside the `.seymour/artifacts/render/` directory by the verification harness, not by my direct `soffice` command (which is sandboxed). Let me copy one of those to the workspace root and verify it.\n\n{\"tool\": \"run_command\", \"args\": {\"command\": \"cp .seymour/artifacts/render/q1_review/q1_review.pdf q1_review.pdf && ls -l q1_review.pdf && python -c \\\"import pypdf; r=pypdf.Pd",
+   "run_id": "01acce75-82b7-47aa-b0d0-4949a1aad064",
+   "session_id": "ecd27dbe-e136-4c4e-b879-86c55f885489",
+   "peak_prompt_tokens": 21546,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {
+    "images": 7,
+    "notes": [],
+    "interaction_ok": null
+   }
+  },
+  {
+   "harness": "dsh",
+   "task": "pptx-from-data",
+   "category": "office",
+   "status": "done",
+   "seconds": 120.0,
+   "score": 0.875,
+   "tool_calls": 16,
+   "checks": [
+    {
+     "name": "q1_review.pptx exists",
+     "ok": true,
+     "detail": "q1_review.pptx"
+    },
+    {
+     "name": "q1_review.pptx: exactly 6 slides",
+     "ok": true,
+     "detail": "6 slides"
+    },
+    {
+     "name": "q1_review.pptx: a native chart on some slide",
+     "ok": true,
+     "detail": "chart shape found"
+    },
+    {
+     "name": "q1_review.pptx: the chart carries the real numbers",
+     "ok": true,
+     "detail": "looked for 128000/149000/412500 in chart series"
+    },
+    {
+     "name": "q1_review.pptx: speaker notes on every slide",
+     "ok": true,
+     "detail": "notes checked"
+    },
+    {
+     "name": "q1_review.pptx: the key numbers are computed (total 1,007,200; north best; +16% growth)",
+     "ok": true,
+     "detail": "looked for the total and 'North'"
+    },
+    {
+     "name": "q1_review.pptx: one type scale (\u2264 4 distinct font sizes)",
+     "ok": false,
+     "detail": "sizes []"
+    },
+    {
+     "name": "q1_review.pptx: no overflow, no empty placeholders",
+     "ok": true,
+     "detail": "[auto-check /var/folders/jh/nmtdv8ld6yv5pvfrgplgf65h0000gn/T/tmp035qk65x/q1_review.pptx] verdict: PASS \u2014 6 slide(s); notes on 6"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/dsh/pptx-from-data/q1_review.pptx"
+   ],
+   "runtime": "",
+   "final": "Done. Here's what was built:\n\n**`q1_review.pptx`** \u2014 6 slides, consistent dark navy/teal palette, Calibri fonts, speaker notes on every slide:\n\n| # | Slide | Content |\n|---|-------|---------|\n| 1 | **Title** | \"Q1 2026 Revenue Review\" \u2014 January to March 2026 |\n| 2 | **Chart** | Grouped column chart: revenue by region \u00d7 month, with takeaway (\"North leads \u2014 nearly 41% of total\") |\n| 3 | **Key Number",
+   "render": {
+    "images": 7,
+    "notes": [],
+    "interaction_ok": null
+   }
+  },
+  {
+   "harness": "seymour",
+   "task": "code-bug-across-files",
+   "category": "code",
+   "status": "done",
+   "seconds": 45.3,
+   "score": 1.0,
+   "tool_calls": 5,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "tests/test_inventory.py untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "data/stock.csv untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "the fix is in loader.py (the cause), not report.py (the symptom)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "the fix is minimal (1\u20133 lines of loader.py differ)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/seymour/code-bug-across-files/loader.py"
+   ],
+   "runtime": "",
+   "final": "**Root cause & fix**\n\nThe bug was in **`inv/loader.py`**. The `_int()` helper used `value.isdigit()`, which returns `False` for `\" 3\"` and `\" 5\"` (the CSV has leading spaces in the `qty` column). Because of that, `qty` stayed a string instead of becoming an integer.\n\nI changed line 10 to strip whitespace first:\n```python\nreturn int(value) if value.strip().isdigit() else value\n```\n\n**Why the failur",
+   "run_id": "370ad691-29a1-4bce-a948-973d50954a8c",
+   "session_id": "1e84f4cf-07f9-430b-8982-81247b0fb1b0",
+   "peak_prompt_tokens": 5860,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  },
+  {
+   "harness": "dsh",
+   "task": "code-bug-across-files",
+   "category": "code",
+   "status": "done",
+   "seconds": 27.3,
+   "score": 1.0,
+   "tool_calls": 10,
+   "checks": [
+    {
+     "name": "tests pass",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "tests/test_inventory.py untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "data/stock.csv untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "the fix is in loader.py (the cause), not report.py (the symptom)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "the fix is minimal (1\u20133 lines of loader.py differ)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/dsh/code-bug-across-files/loader.py"
+   ],
+   "runtime": "",
+   "final": "All 3 tests pass.\n\n**Root cause:** The bug was in `inv/loader.py`, line 10, in the `_int()` helper function. It calls `value.isdigit()` to decide whether to convert a string to an `int`, but the CSV file has whitespace-padded qty fields (e.g., `\" 3\"` instead of `\"3\"`). Since `\" 3\".isdigit()` returns `False`, the raw string `\" 3\"` was passed straight through to the `Item` dataclass, making `qty` a ",
+   "render": {}
+  },
+  {
+   "harness": "seymour",
+   "task": "code-make-it-fast",
+   "category": "code",
+   "status": "done",
+   "seconds": 31.4,
+   "score": 1.0,
+   "tool_calls": 6,
+   "checks": [
+    {
+     "name": "bench.py untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "results identical (checksum unchanged)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "at least 5\u00d7 faster than the original",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "at least 20\u00d7 faster than the original",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/seymour/code-make-it-fast/textstats.py"
+   ],
+   "runtime": "",
+   "final": "**Before:** `ms=2081.0`  \n**After:** `ms=9.2`  \n**Checksum:** `0ad4d523ce4bcdf9` (unchanged)\n\nThe speedup comes from replacing the O(n\u00b2) list lookups and repeated `.count()` calls with `collections.Counter`, which counts everything in a single O(n) pass. The results are identical, and the benchmark runs over 200\u00d7 faster.",
+   "run_id": "245696fc-d59b-438c-b59e-0d7b6a5ce597",
+   "session_id": "265fa935-bc1e-4eac-8ce9-8918960f9ea8",
+   "peak_prompt_tokens": 7043,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  },
+  {
+   "harness": "dsh",
+   "task": "code-make-it-fast",
+   "category": "code",
+   "status": "done",
+   "seconds": 24.5,
+   "score": 1.0,
+   "tool_calls": 5,
+   "checks": [
+    {
+     "name": "bench.py untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "results identical (checksum unchanged)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "at least 5\u00d7 faster than the original",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "at least 20\u00d7 faster than the original",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/dsh/code-make-it-fast/textstats.py"
+   ],
+   "runtime": "",
+   "final": "Results:\n\n| | Before | After | Speedup |\n|---|---|---|---|\n| **Time** | 2133.5 ms | 9.0 ms | ~237\u00d7 faster |\n| **Checksum** | `0ad4d523ce4bcdf9` | `0ad4d523ce4bcdf9` | \u2705 identical |\n\n**What changed:** Both `top_words` and `bigrams` were using O(n\u00b2) algorithms \u2014 a list for deduplication (`w not in unique`) and `list.count()` for frequency counting. Replaced both with `collections.Counter`, reducing ",
+   "render": {}
+  },
+  {
+   "harness": "seymour",
+   "task": "html-desktop-os-verified",
+   "category": "web",
+   "status": "done",
+   "seconds": 257.6,
+   "score": 0.778,
+   "tool_calls": 5,
+   "checks": [
+    {
+     "name": "os.html exists",
+     "ok": true,
+     "detail": "os.html"
+    },
+    {
+     "name": "os.html is a complete HTML document with script",
+     "ok": true,
+     "detail": "62 tags; script=True"
+    },
+    {
+     "name": "os.html is self-contained",
+     "ok": true,
+     "detail": "0 external references"
+    },
+    {
+     "name": "has the start button id",
+     "ok": true,
+     "detail": "id\\s*=\\s*[\"\\']start-button[\"\\']"
+    },
+    {
+     "name": "window stacking",
+     "ok": true,
+     "detail": "z-?index"
+    },
+    {
+     "name": "os.html: no console errors at load",
+     "ok": true,
+     "detail": "0 console errors"
+    },
+    {
+     "name": "os.html: \u226550% of interaction steps pass",
+     "ok": true,
+     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+    },
+    {
+     "name": "os.html: \u226590% of interaction steps pass",
+     "ok": false,
+     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+    },
+    {
+     "name": "os.html: \u2265100% of interaction steps pass",
+     "ok": false,
+     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/seymour/html-desktop-os-verified/os.html"
+   ],
+   "runtime": "os.html: 0 errors",
+   "final": "The interaction test passed perfectly: the calculator correctly computed `8 / 2 = 4`, and the start menu toggling and window opening worked as expected.\n\nThe `check_page` report mentioned `calc-display` was missing from the page initially. This is a false positive: the ID exists in the HTML source, but `check_page` checks the DOM *before* the interaction steps run, and at that point, the calculato",
+   "run_id": "d6dca229-0f53-48f4-b838-dd8a6d76bc9c",
+   "session_id": "5fd87c4b-d81b-48c5-bdd6-b37fc061fa0a",
+   "peak_prompt_tokens": 13334,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {
+    "images": 16,
+    "notes": [],
+    "interaction_ok": false
+   }
+  },
+  {
+   "harness": "dsh",
+   "task": "html-desktop-os-verified",
+   "category": "web",
+   "status": "timeout",
+   "seconds": 960.0,
+   "score": 0.778,
+   "tool_calls": 0,
+   "checks": [
+    {
+     "name": "os.html exists",
+     "ok": true,
+     "detail": "os.html"
+    },
+    {
+     "name": "os.html is a complete HTML document with script",
+     "ok": true,
+     "detail": "15 tags; script=True"
+    },
+    {
+     "name": "os.html is self-contained",
+     "ok": true,
+     "detail": "0 external references"
+    },
+    {
+     "name": "has the start button id",
+     "ok": true,
+     "detail": "id\\s*=\\s*[\"\\']start-button[\"\\']"
+    },
+    {
+     "name": "window stacking",
+     "ok": true,
+     "detail": "z-?index"
+    },
+    {
+     "name": "os.html: no console errors at load",
+     "ok": true,
+     "detail": "0 console errors"
+    },
+    {
+     "name": "os.html: \u226550% of interaction steps pass",
+     "ok": true,
+     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+    },
+    {
+     "name": "os.html: \u226590% of interaction steps pass",
+     "ok": false,
+     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+    },
+    {
+     "name": "os.html: \u2265100% of interaction steps pass",
+     "ok": false,
+     "detail": "17/21 steps passed; first failures: ['drag .window .titlebar 120 60', 'expect changed', 'click .window']"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/dsh/html-desktop-os-verified/os.html"
+   ],
+   "runtime": "os.html: 0 errors",
+   "final": "(timed out)",
+   "render": {
+    "images": 16,
+    "notes": [],
+    "interaction_ok": false
+   }
+  },
+  {
+   "harness": "seymour",
+   "task": "audit-long-horizon",
+   "category": "code",
+   "status": "done",
+   "seconds": 204.3,
+   "score": 1.0,
+   "tool_calls": 15,
+   "checks": [
+    {
+     "name": "AUDIT.md exists",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "bug 1 fixed: search is case/accent-insensitive",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "bug 2 fixed: days_between sign, fees positive",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "bug 3 fixed: add_days is off by one (due dates)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "loan limits and copies still hold (nothing broken)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "AUDIT.md names the two files and the two mechanisms",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "AUDIT.md also names the add_days off-by-one",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "frozen files untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/seymour/audit-long-horizon/AUDIT.md",
+    "compare-v2/seymour/audit-long-horizon/repo.py",
+    "compare-v2/seymour/audit-long-horizon/dates.py"
+   ],
+   "runtime": "",
+   "final": "Let me verify the fixes with a quick Python check, then write the audit report.\n\n{\"tool\": \"run_command\", \"args\": {\"command\": \"cd libra && python -c \\\"\\nfrom lib.utils.dates import add_days, days_between, parse\\n\\n# Fix 1: add_days \u2014 borrowed on 2024-01-01, 14-day loan should be due 2024-01-15\\nprint('add_days(2024-01-01, 14) =', add_days('2024-01-01', 14))\\n\\n# Fix 2: days_between \u2014 5 days later s",
+   "run_id": "0e512ae8-b0d4-4816-ae88-2915fa6cd143",
+   "session_id": "bebba10d-b5f2-4a3c-b9e1-5d1113a5f271",
+   "peak_prompt_tokens": 11414,
+   "compactions": 0,
+   "spills": 0,
+   "prunes": 0,
+   "render": {}
+  },
+  {
+   "harness": "dsh",
+   "task": "audit-long-horizon",
+   "category": "code",
+   "status": "done",
+   "seconds": 146.3,
+   "score": 1.0,
+   "tool_calls": 33,
+   "checks": [
+    {
+     "name": "AUDIT.md exists",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "bug 1 fixed: search is case/accent-insensitive",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "bug 2 fixed: days_between sign, fees positive",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "bug 3 fixed: add_days is off by one (due dates)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "loan limits and copies still hold (nothing broken)",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "AUDIT.md names the two files and the two mechanisms",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "AUDIT.md also names the add_days off-by-one",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    },
+    {
+     "name": "frozen files untouched",
+     "ok": true,
+     "detail": "recorded 1.00 at run time; per-check detail lost to a rescore that could not rerun whole-workspace checks (fixed)"
+    }
+   ],
+   "artifacts": [
+    "compare-v2/dsh/audit-long-horizon/AUDIT.md",
+    "compare-v2/dsh/audit-long-horizon/repo.py",
+    "compare-v2/dsh/audit-long-horizon/dates.py"
+   ],
+   "runtime": "",
+   "final": "## Audit complete \u2014 3 bugs found and fixed\n\n### Bug 1: Search returns nothing for visible books\n- **File:** `lib/storage/repo.py` \u2014 `find_by_title`\n- **Problem:** Query was normalized (lowercased, accents stripped) but book titles were not. Comparison like `\"le petit prince\" in \"Le Petit Prince\"` fails.\n- **Fix:** Apply `normalise()` to `b.title` as well: `wanted in normalise(b.title)`\n\n### Bug 2:",
+   "render": {}
   }
  ]
 }
