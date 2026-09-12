@@ -142,3 +142,43 @@ the chat as cards (only the trace) — dsh's diff card and terminal card are
 the model to copy; (3) Playwright as an optional extra for headless
 `check_page` in the eval runner; (4) a resumable streaming-JSON extractor
 (oh-my-pi's) if the per-frame regex peek ever shows in profiles.
+
+## 2026-09-11: after the overhaul — what is now left
+
+Shipped today (HARNESS.md, "The overhaul"): the context economy and the
+60-call budget, the agency primitives (todo, glob, structure, jobs, the
+persistent shell, git, read_image, ask_user_question, subagents), the
+office and interaction verifiers, the renderer and the judge packets,
+the Code-pane layout fix, tool cards, detached runs, the rewritten
+skills, the MCP config file, the measured cache-hit rate, the model
+profile, and the second eval set. The list above is superseded; what
+remains, ranked:
+
+1. **Native tool calling, eval-gated.** The profile now measures whether
+   the template accepts `tools`; the experiment itself (run the v2 set
+   both ways, keep the winner, write the number in NOTES.md) is not done.
+   The in-band parser is the one place malformed calls are repaired and
+   logged, and today it also accepts the flat shape; switching is a
+   day's work plus a full eval run. ~1 day.
+2. **Two engines at once** — the MoE on llama.cpp for the loop, the
+   dense VLM on mlx-vlm for `read_image` and page screenshots — gated on
+   the hwfit budget. Not on the critical path (the judge runs outside
+   Seymour). ~2 days.
+3. **Parallel dispatch of independent read-only calls.** Three reads in
+   a row are three round trips; the executor handles one call per
+   reply. Needs a multi-call reply shape the model reliably produces,
+   which is the native-calling question again. ~1 day after (1).
+4. **Per-step thinking budget** (on for planning, off for dispatch and
+   writes): the chat run now turns thinking off after a round that spent
+   its whole cap thinking; the finer per-call policy is still to do.
+   ~half a day.
+5. **Speculative decoding on llama.cpp** (`--model-draft` with a small
+   Qwen): measure the accept rate, keep it only above 40 %. ~half a day.
+6. **`check_page` for a served URL** (a dev server started with
+   run_in_background): the browser probe injects into workspace files
+   only; the Playwright path could take a URL today with a small change.
+7. **Cards for reopened conversations**: a re-attached live run replays
+   its cards; a finished one shows only the persisted prose — the trace
+   has the rest. Rebuilding cards from the run log is ~half a day.
+8. **Structural read with tree-sitter** only if the regex outline proves
+   insufficient on real repos (it handles py/js/ts/md/html/css today).

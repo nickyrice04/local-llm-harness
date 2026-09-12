@@ -392,3 +392,67 @@ after the fix the four misses reran 3/4 — 26 of 27 rows green across the
 two runs. The one red row, `agent-list`, is the pre-existing "asks a
 question instead of finishing" flake (the model had the complete list and
 asked which format was wanted).
+
+## The overhaul (2026-09-11)
+
+The author's verdict — Seymour did not feel like Claude Code or dsh, the
+UI was bad, performance was poor — had specific causes, and the day's
+work is organised by them. Everything below has tests (172 in all) and
+ships in the same one-registry / one-executor / append-only-log spine.
+
+- **The context economy** (`seymour/context/`). The twelve-tool cap
+  existed because the harness could not survive a long run, so it
+  forbade one. Now a result over 16 KB is spilled whole to an artifact
+  and excerpted (head 2/3, tail 1/3, a pointer read_file can follow);
+  under pressure (40 % of the loaded context) superseded and stale
+  reads, superseded write results and old spill excerpts are blanked in
+  place; at 70 % the oldest tool-pair-balanced range is summarized by
+  the model into a structured block (a mechanical ledger when the model
+  cannot) with the last three pairs verbatim and the todo plan re-stated
+  exactly. Every decision is a `context` RunEvent; the chat shows a
+  one-line note. Chat's budget is 60 tool calls / 90 rounds; a
+  twenty-call run on an 8k context is a test. The agent loop got the
+  same spill and a character budget on its journal tail.
+- **Agency primitives** (`seymour/tools/`): `todo_write` (the plan kept
+  by the harness, shown as a panel, survives compaction), `glob`,
+  `read_structure` (declarations with line numbers, bodies elided),
+  `run_in_background` / `job_output` / `job_kill` (localhost networking
+  allowed inside the sandbox so a dev server can serve), a persistent
+  `shell` (one confined /bin/sh per run), `git_overview` /
+  `git_file_diff` / `git_hunk`, `read_image` (attaches the picture when
+  vision is measured, says so when not), `ask_user_question` (one
+  question in the thread, answered through the run's route) and `task`
+  / `tasks` (subagents on a Target / Change / Acceptance contract:
+  bounded summary plus the full journal on disk; a child cannot spawn
+  children). `tools/context.py` carries the run scope.
+- **Verifiers finished** (`seymour/verify/`): workbooks are RECALCULATED
+  through LibreOffice and the values read back (error literals and empty
+  formulas fail); decks and documents are rendered to PNG (soffice → PDF
+  → PyMuPDF, plus a contact sheet) and checked for empty placeholders,
+  overflow and slide count; pages can be DRIVEN through Playwright
+  (`check_page(interact=…)`: click / type / drag / expect, each step
+  reporting whether the DOM changed) and an interaction failure
+  overrides a clean load. `auto_check` covers .xlsx / .pptx / .docx.
+- **The UI**: the Code pane's editor has a 480 px floor, the side panel
+  and tree collapse via container queries on the pane, every column is
+  drag-resizable and persisted, and the avatar column steps aside when
+  the shell cannot hold chat + editor. Every tool call is a card in the
+  thread (terminal with the exit code, diff with the server-computed
+  +/- and unified diff, search, result) beside the code card; the plan
+  panel; the question card. Runs are DETACHED (`seymour/live_runs.py`):
+  a closed tab no longer cancels a run, Stop is an explicit route, and a
+  reopened conversation re-attaches to the coalesced replay.
+- **Skills**: xlsx, pptx and code-fix-loop rewritten with a worked
+  example and a required verification step; `docx-python` and
+  `data-analysis` added. **MCP**: `~/.seymour/mcp.json` mounts servers;
+  Settings shows each tool's real schema.
+- **The eval set v2** (`evals/compare/tasks.py`), the renderer
+  (`evals/render/`) and the judge packets (`evals/judge/`); Seymour's
+  side of the comparison now runs through the chat executor.
+- **Measured**: the prompt cache hits (mean 84 % over a run, 91–98 % on
+  every round after the cold one — `cache_n` from llama-server, per
+  round in the trace); the parser was dropping flat-shaped arguments
+  and a round could spend its whole cap thinking (both fixed, both
+  found by the first smoke run of the new set). **The model profile**
+  (`engine/profile.py`) measures tools-in-template, the thinking channel
+  and the system prompt's token cost per model and drives the defaults.
